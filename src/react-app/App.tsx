@@ -25,7 +25,7 @@ function App() {
       .then((data) => setComments(data))
       .catch((error) => console.error("Error loading comments:", error));
   };
-
+ 
   return (
     <>
       <div>
