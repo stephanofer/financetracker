@@ -3,11 +3,16 @@ import { createRoot } from "react-dom/client";
 import { createBrowserRouter, RouterProvider } from "react-router";
 import "./index.css";
 import { HomeContainer } from "./home/HomeContainer";
+import { DashboardContainer } from "./dashboard/DashboardContainer";
 
 const router = createBrowserRouter([
   {
     path: "/",
     element: <HomeContainer />,
+  },
+  {
+    path: "dashboard",
+    element: <DashboardContainer />,
   },
 ]);
 

@@ -7,12 +7,9 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import {
-  Field,
-  FieldGroup,
-  FieldLabel,
-} from "@/components/ui/field";
+import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
+import { Link } from "react-router";
 
 export function LoginForm({
   className,
@@ -58,6 +55,9 @@ export function LoginForm({
           </form>
         </CardContent>
       </Card>
+      <Link to="/dashboard" >
+      Dashboard
+      </Link>
     </div>
   );
 }
