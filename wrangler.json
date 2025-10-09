@@ -18,6 +18,9 @@
       "database_id": "b5b86c92-a64d-4bba-abfb-8ea4be28e07e"
     }
   ],
+  "routes": [
+    {"pattern": "financetracker.stephanofer.com", "custom_domain": true}
+  ],
   /**
    * Smart Placement
    * Docs: https://developers.cloudflare.com/workers/configuration/smart-placement/#smart-placement
