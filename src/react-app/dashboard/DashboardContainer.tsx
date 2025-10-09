@@ -1,11 +1,5 @@
 import {
   Bell,
-  Car,
-  Banknote,
-  UtensilsCrossed,
-  Wallet,
-  ShoppingBag,
-  Home as HomeIcon,
   ArrowUpRight,
   ArrowDownRight,
 } from "lucide-react";
