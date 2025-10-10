@@ -6,7 +6,19 @@ import {
   SheetTitle,
   SheetDescription,
 } from "@/components/ui/sheet";
-import { Home, Search, Repeat, Layers, User, DollarSign, Tag, Wallet, CalendarIcon, Calendar } from "lucide-react";
+import {
+  Home,
+  Search,
+  Repeat,
+  Layers,
+  User,
+  DollarSign,
+  Tag,
+  Wallet,
+  CalendarIcon,
+  Calendar,
+  FileText,
+} from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -15,15 +27,75 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { useQuery } from "@tanstack/react-query";
 
 type ActionType = "expense" | "income" | "account" | "debt" | null;
+
+// Types para las respuestas de la API
+interface Category {
+  id: number;
+  name: string;
+  type: "ingreso" | "gasto";
+  color: string;
+  icon: string;
+  order_index: number;
+  is_active: boolean;
+  created_at: string;
+}
+
+interface Subcategory {
+  id: number;
+  category_id: number;
+  name: string;
+  order_index: number;
+  is_active: boolean;
+  created_at: string;
+}
+
+interface Account {
+  id: number;
+  user_id: number;
+  name: string;
+  type: "efectivo" | "debito" | "credito" | "banco" | "ahorros" | "inversiones";
+  balance: number;
+  currency: string;
+  color: string | null;
+  icon: string | null;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+interface ApiResponse<T> {
+  success: boolean;
+  data: T;
+  count: number;
+}
 
 export function BottomNav() {
   const [showQuickActions, setShowQuickActions] = useState(false);
   const [activeForm, setActiveForm] = useState<ActionType>(null);
+  const [category, setCategory] = useState<string>("");
+  const [subcategory, setSubcategory] = useState<string>("");
+  const [amount, setAmount] = useState<string>("");
+  const [description, setDescription] = useState<string>("");
+
+  const handleCategoryChange = (value: string) => {
+    setCategory(value);
+    setSubcategory("");
+  };
 
   const handleActionClick = (actionType: ActionType) => {
     setShowQuickActions(false);
@@ -44,6 +116,36 @@ export function BottomNav() {
         return "";
     }
   };
+
+  const { data, isPending } = useQuery<ApiResponse<Category[]>>({
+    queryKey: ["categories"],
+    queryFn: async () => {
+      const res = await fetch("/api/categories");
+      if (!res.ok) throw new Error("Error fetching categories");
+      return res.json();
+    },
+  });
+
+  const { data: subcategoryData } = useQuery<ApiResponse<Subcategory[]>>({
+    queryKey: ["subcategories"],
+    queryFn: async () => {
+      const res = await fetch("/api/subcategories");
+      if (!res.ok) throw new Error("Error fetching subcategories");
+      return res.json();
+    },
+  });
+
+  const { data: accountData } = useQuery<ApiResponse<Account[]>>({
+    queryKey: ["accounts"],
+    queryFn: async () => {
+      const res = await fetch("/api/accounts?userId=1");
+      if (!res.ok) throw new Error("Error fetching accounts");
+      return res.json();
+    },
+  });
+
+  console.log("Categories:", data?.data);
+  console.log("Subcategories:", subcategoryData?.data);
 
   return (
     <>
@@ -85,7 +187,29 @@ export function BottomNav() {
               <span className="text-sm text-white">Agregar Ingreso</span>
             </button>
 
-            <button className="flex flex-col items-center justify-center p-4 bg-white/10 rounded-lg hover:bg-white/20 transition">
+            <button
+              onClick={() => {
+                fetch("/api/transaction/income", {
+                  method: "POST",
+                  headers: {
+                    "Content-Type": "application/json",
+                  },
+                  body: JSON.stringify({
+                    amount: 1500.5,
+                    description: "Salario mensual",
+                    date: new Date().toISOString(),
+                    accountId: "1",
+                    categoryId: "1",
+                    subcategoryId: "1",
+                    notes: "Pago de salario",
+                    userId: "1",
+                  }),
+                })
+                  .then((res) => res.json())
+                  .then((data) => console.log(data));
+              }}
+              className="flex flex-col items-center justify-center p-4 bg-white/10 rounded-lg hover:bg-white/20 transition"
+            >
               <div className="mb-2 p-3 bg-red-500/20 rounded-full">
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
@@ -117,7 +241,7 @@ export function BottomNav() {
             <DialogTitle>{getDialogTitle()}</DialogTitle>
           </DialogHeader>
           <div className="mt-4">
-            <form  className="space-y-4">
+            <form className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="amount" className="text-sm font-medium">
                   Monto *
@@ -129,8 +253,8 @@ export function BottomNav() {
                     type="number"
                     step="0.01"
                     placeholder="0.00"
-                    value="10"
-                    // onChange={}
+                    // value={amount}
+                    // onChange={(e) => setAmount(e.target.value)}
                     className="pl-9"
                     required
                   />
@@ -146,62 +270,92 @@ export function BottomNav() {
                     <Tag className="h-3.5 w-3.5" />
                     Categoría *
                   </Label>
-                  <Select required>
+                  <Select
+                    value={category}
+                    onValueChange={handleCategoryChange}
+                    required
+                    disabled={isPending}
+                  >
                     <SelectTrigger id="category">
-                      <SelectValue placeholder="Seleccionar" />
+                      <SelectValue
+                        placeholder={isPending ? "Cargando..." : "Seleccionar"}
+                      />
                     </SelectTrigger>
                     <SelectContent>
-
+                      {data?.data?.map((cat) => (
+                        <SelectItem key={cat.id} value={cat.id.toString()}>
+                          {cat.icon} {cat.name}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
 
                 <div className="space-y-2">
                   <Label
-                    htmlFor="account"
+                    htmlFor="subcategory"
                     className="text-sm font-medium flex items-center gap-2"
                   >
-                    <Wallet className="h-3.5 w-3.5" />
-                    Cuenta *
+                    <Tag className="h-3.5 w-3.5" />
+                    Subcategoría
                   </Label>
-                  <Select required>
-                    <SelectTrigger id="account">
-                      <SelectValue placeholder="Seleccionar" />
+                  <Select
+                    value={subcategory}
+                    onValueChange={setSubcategory}
+                    disabled={isPending}
+                  >
+                    <SelectTrigger id="subcategory">
+                      <SelectValue
+                        placeholder={isPending ? "Cargando..." : "Seleccionar"}
+                      />
                     </SelectTrigger>
                     <SelectContent>
+                      {subcategoryData?.data?.map((sub) => (
+                        <SelectItem key={sub.id} value={sub.id.toString()}>
+                          {sub.name}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="description" className="text-sm font-medium">
+                <Label
+                  htmlFor="account"
+                  className="text-sm font-medium flex items-center gap-2"
+                >
+                  <Wallet className="h-3.5 w-3.5" />
+                  Tipo de Cuenta *
+                </Label>
+                <Select required>
+                  <SelectTrigger id="account">
+                    <SelectValue placeholder="Seleccionar" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {accountData?.data?.map((acc) => (
+                      <SelectItem key={acc.id} value={acc.id.toString()}>
+                        {acc.icon} {acc.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label
+                  htmlFor="description"
+                  className="text-sm font-medium flex items-center gap-2"
+                >
+                  <FileText className="h-3.5 w-3.5" />
                   Descripción
                 </Label>
                 <Input
                   id="description"
                   placeholder="Ej: Pago de salario mensual"
-                  value="asd"
+                  // value={description}
                   // onChange={(e) => setDescription(e.target.value)}
                 />
-              </div>
-
-              <div className="space-y-2">
-                <Label className="text-sm font-medium">Fecha</Label>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                    >
-                      <CalendarIcon className="mr-2 h-4 w-4" />
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar
-                      mode="single"
-                    />
-                  </PopoverContent>
-                </Popover>
               </div>
 
               <Button type="submit" className="w-full">
