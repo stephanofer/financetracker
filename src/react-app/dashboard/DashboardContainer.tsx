@@ -4,8 +4,6 @@ import {
   ArrowDownRight,
   Check,
   Wallet,
-  ShoppingBag,
-  HomeIcon,
 } from "lucide-react";
 import { BottomNav } from "./components/BottomNav";
 import { Greeting } from "./components/Greeting";
@@ -27,7 +25,7 @@ export function DashboardContainer() {
         </div>
       </header>
 
-      <div className="px-6 mb-8">
+      <div className="px-6 ">
         <div className="flex items-start justify-between mb-6 gap-5">
           <div className="flex-1">
             <div className="flex items-center gap-2 mb-2">
@@ -77,55 +75,62 @@ export function DashboardContainer() {
       </div>
 
       <div className="bg-[#093030] space-y-4 border rounded-t-[50px] flex-1">
-        <div className="px-6 pt-4">
+        <div className="px-4 pt-6 flex flex-col gap-6">
           <div className="flex items-center gap-4">
             <div className="bg-blue-500/20 rounded-2xl p-4">
-              <Wallet className="w-8 h-8 text-blue-400" strokeWidth={1.5} />
+              <Wallet className="w-4 h-4 text-blue-400" strokeWidth={1.5} />
             </div>
             <div className="flex-1">
-              <p className="text-white font-semibold text-lg">Salary</p>
-              <p className="text-blue-400 text-sm">18:27 - April 30</p>
+              <p className="text-[#F1FFF3] font-semibold text-base">Salary</p>
+                <p className="text-[#3299FF] text-xs font-semibold whitespace-nowrap">
+                18:27 - April 30
+                </p>
             </div>
-            <div className="text-center px-4">
-              <p className="text-white/60 text-sm">Monthly</p>
-            </div>
+
+            <div className="text-center border-x-1 border-[#00D09E] self-stretch flex items-center px-2">
+              <p className="text-[#F1FFF3] text-xs">Monthly</p>
+            </div> 
+
             <div>
-              <p className="text-white font-bold text-xs">$ 4,000,00</p>
+              <p className="text-[#3299FF] font-bold text-sm">$ 4,000,00</p>
             </div>
           </div>
-
           <div className="flex items-center gap-4">
             <div className="bg-blue-500/20 rounded-2xl p-4">
-              <ShoppingBag
-                className="w-8 h-8 text-blue-400"
-                strokeWidth={1.5}
-              />
+              <Wallet className="w-4 h-4 text-blue-400" strokeWidth={1.5} />
             </div>
             <div className="flex-1">
-              <p className="text-white font-semibold text-lg">Groceries</p>
-              <p className="text-blue-400 text-sm">17:00 - April 24</p>
+              <p className="text-[#F1FFF3] font-semibold text-base">Salary</p>
+                <p className="text-[#3299FF] text-xs font-semibold whitespace-nowrap">
+                18:27 - April 30
+                </p>
             </div>
-            <div className="text-center px-4">
-              <p className="text-white/60 text-sm">Pantry</p>
-            </div>
+
+            <div className="text-center border-x-1 border-[#00D09E] self-stretch flex items-center px-2">
+              <p className="text-[#F1FFF3] text-xs">Monthly</p>
+            </div> 
+
             <div>
-              <p className="text-cyan-400 font-bold text-xs">-$100,00</p>
+              <p className="text-[#3299FF] font-bold text-sm">$ 4,000,00</p>
             </div>
           </div>
-
           <div className="flex items-center gap-4">
             <div className="bg-blue-500/20 rounded-2xl p-4">
-              <HomeIcon className="w-8 h-8 text-blue-400" strokeWidth={1.5} />
+              <Wallet className="w-4 h-4 text-blue-400" strokeWidth={1.5} />
             </div>
             <div className="flex-1">
-              <p className="text-white font-semibold text-lg">Rent</p>
-              <p className="text-blue-400 text-sm">8:30 - April 15</p>
+              <p className="text-[#F1FFF3] font-semibold text-base">Salary</p>
+                <p className="text-[#3299FF] text-xs font-semibold whitespace-nowrap">
+                18:27 - April 30
+                </p>
             </div>
-            <div className="text-center px-4">
-              <p className="text-white/60 text-sm">Rent</p>
-            </div>
+
+            <div className="text-center border-x-1 border-[#00D09E] self-stretch flex items-center px-2">
+              <p className="text-[#F1FFF3] text-xs">Monthly</p>
+            </div> 
+
             <div>
-              <p className="text-cyan-400 font-bold text-xs">-$674.40</p>
+              <p className="text-[#3299FF] font-bold text-sm">$ 4,000,00</p>
             </div>
           </div>
         </div>
