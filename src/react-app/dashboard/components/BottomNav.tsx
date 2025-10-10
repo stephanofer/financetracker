@@ -12,11 +12,6 @@ import {
   Repeat,
   Layers,
   User,
-  X,
-  TrendingUp,
-  TrendingDown,
-  Wallet,
-  CreditCard,
 } from "lucide-react";
 
 export function BottomNav() {
@@ -36,7 +31,7 @@ export function BottomNav() {
           </SheetHeader>
         </SheetContent>
       </Sheet>
-      
+
       <nav className="fixed bottom-0 left-0 right-0 bg-[#0E3E3E]/95 backdrop-blur-lg rounded-t-[50px] border-white/10 z-50">
         <div className="flex items-center justify-around h-20 px-6 ">
           {/* Home Button */}
