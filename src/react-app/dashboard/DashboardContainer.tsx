@@ -75,7 +75,7 @@ export function DashboardContainer() {
       </div>
 
       <div className="bg-[#093030] space-y-4 border rounded-t-[50px] flex-1">
-        <div className="mx-6 mt-10 h-20 bg-[#00D09E] rounded-lg mb-[0px]"></div>
+        <div className="mx-6 mt-6 h-20 bg-[#00D09E] rounded-lg mb-[0px]"></div>
         <div className="px-4 pt-6 flex flex-col gap-8">
           <div className="flex items-center gap-4">
             <div className="bg-blue-500/20 rounded-2xl p-4">
