@@ -1,32 +1,12 @@
-import { useState } from "react";
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetDescription,
-} from "@/components/ui/sheet";
-import {
-  Home,
-  Search,
-  Repeat,
-  Layers,
-  User,
-  DollarSign,
-  Tag,
-  Wallet,
-  CalendarIcon,
-  Calendar,
-  FileText,
-} from "lucide-react";
+import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -34,13 +14,26 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Button } from "@/components/ui/button";
 import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
 import { useQuery } from "@tanstack/react-query";
+import {
+  DollarSign,
+  FileText,
+  Home,
+  Layers,
+  Repeat,
+  Search,
+  Tag,
+  User,
+  Wallet
+} from "lucide-react";
+import { useState } from "react";
 
 type ActionType = "expense" | "income" | "account" | "debt" | null;
 
@@ -89,8 +82,8 @@ export function BottomNav() {
   const [activeForm, setActiveForm] = useState<ActionType>(null);
   const [category, setCategory] = useState<string>("");
   const [subcategory, setSubcategory] = useState<string>("");
-  const [amount, setAmount] = useState<string>("");
-  const [description, setDescription] = useState<string>("");
+  // const [amount, setAmount] = useState<string>("");
+  // const [description, setDescription] = useState<string>("");
 
   const handleCategoryChange = (value: string) => {
     setCategory(value);
