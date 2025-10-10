@@ -75,21 +75,22 @@ export function DashboardContainer() {
       </div>
 
       <div className="bg-[#093030] space-y-4 border rounded-t-[50px] flex-1">
-        <div className="px-4 pt-6 flex flex-col gap-6">
+        <div className="mx-6 mt-10 h-20 bg-[#00D09E] rounded-lg mb-[0px]"></div>
+        <div className="px-4 pt-6 flex flex-col gap-8">
           <div className="flex items-center gap-4">
             <div className="bg-blue-500/20 rounded-2xl p-4">
               <Wallet className="w-4 h-4 text-blue-400" strokeWidth={1.5} />
             </div>
             <div className="flex-1">
               <p className="text-[#F1FFF3] font-semibold text-base">Salary</p>
-                <p className="text-[#3299FF] text-xs font-semibold whitespace-nowrap">
+              <p className="text-[#3299FF] text-xs font-semibold whitespace-nowrap">
                 18:27 - April 30
-                </p>
+              </p>
             </div>
 
             <div className="text-center border-x-1 border-[#00D09E] self-stretch flex items-center px-2">
               <p className="text-[#F1FFF3] text-xs">Monthly</p>
-            </div> 
+            </div>
 
             <div>
               <p className="text-[#3299FF] font-bold text-sm">$ 4,000,00</p>
@@ -101,14 +102,14 @@ export function DashboardContainer() {
             </div>
             <div className="flex-1">
               <p className="text-[#F1FFF3] font-semibold text-base">Salary</p>
-                <p className="text-[#3299FF] text-xs font-semibold whitespace-nowrap">
+              <p className="text-[#3299FF] text-xs font-semibold whitespace-nowrap">
                 18:27 - April 30
-                </p>
+              </p>
             </div>
 
             <div className="text-center border-x-1 border-[#00D09E] self-stretch flex items-center px-2">
               <p className="text-[#F1FFF3] text-xs">Monthly</p>
-            </div> 
+            </div>
 
             <div>
               <p className="text-[#3299FF] font-bold text-sm">$ 4,000,00</p>
@@ -120,14 +121,14 @@ export function DashboardContainer() {
             </div>
             <div className="flex-1">
               <p className="text-[#F1FFF3] font-semibold text-base">Salary</p>
-                <p className="text-[#3299FF] text-xs font-semibold whitespace-nowrap">
+              <p className="text-[#3299FF] text-xs font-semibold whitespace-nowrap">
                 18:27 - April 30
-                </p>
+              </p>
             </div>
 
             <div className="text-center border-x-1 border-[#00D09E] self-stretch flex items-center px-2">
               <p className="text-[#F1FFF3] text-xs">Monthly</p>
-            </div> 
+            </div>
 
             <div>
               <p className="text-[#3299FF] font-bold text-sm">$ 4,000,00</p>
