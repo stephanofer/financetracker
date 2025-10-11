@@ -14,7 +14,6 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -31,16 +30,12 @@ import {
 } from "@/components/ui/sheet";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
-  DollarSign,
-  FileText,
   Home,
   Layers,
   Repeat,
   Search,
-  Tag,
   Upload,
   User,
-  Wallet,
   X,
 } from "lucide-react";
 import { useState } from "react";
@@ -59,14 +54,8 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-  useFormField,
 } from "@/components/ui/form";
 
-interface CreateTransactionResponse {
-  success: boolean;
-  id?: number;
-  error?: string;
-}
 
 export function BottomNav() {
   interface CreateTransactionResponse {
