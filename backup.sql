@@ -1,13 +1,5 @@
 PRAGMA defer_foreign_keys=TRUE;
-CREATE TABLE comments (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  author TEXT NOT NULL,
-  content TEXT NOT NULL
-);
-INSERT INTO "comments" VALUES(1,'Kristian','Congrats!');
-INSERT INTO "comments" VALUES(2,'Serena','Great job!');
-INSERT INTO "comments" VALUES(3,'Max','Keep up the good work!');
-INSERT INTO "comments" VALUES(4,'dasd','dasdasd');
+
 CREATE TABLE users (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     username TEXT UNIQUE NOT NULL,
@@ -20,6 +12,9 @@ CREATE TABLE users (
     is_active BOOLEAN DEFAULT 1,
     auto_logout_minutes INTEGER DEFAULT 30
 );
+
+INSERT INTO "users" VALUES('demo_user','holamundo','demo_user@example.com','Demo User',NULL);
+
 CREATE TABLE sessions (
     id TEXT PRIMARY KEY,
     user_id INTEGER NOT NULL,
@@ -39,7 +34,7 @@ CREATE TABLE accounts (
     name TEXT NOT NULL,
     type TEXT NOT NULL CHECK(type IN ('efectivo', 'debito', 'credito', 'banco', 'ahorros', 'inversiones')),
     balance DECIMAL(15, 2) DEFAULT 0.00,
-    currency TEXT DEFAULT 'MXN',
+    currency TEXT DEFAULT 'PEN',
     color TEXT, -- hex color
     icon TEXT, -- icon name
     is_active BOOLEAN DEFAULT 1,
@@ -47,6 +42,10 @@ CREATE TABLE accounts (
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
+
+INSERT INTO "accounts" VALUES(1,1,'Cuenta de Prueba','banco',1000.00,'PEN','#FF5733','🏦',1,'2025-10-07 04:32:48','2025-10-07 04:32:48');
+
+
 CREATE TABLE categories (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL,
@@ -97,6 +96,8 @@ INSERT INTO "subcategories" VALUES(12,3,'Streaming (Netflix, Spotify)',2,1,'2025
 INSERT INTO "subcategories" VALUES(13,3,'Videojuegos',3,1,'2025-10-07 04:32:53');
 INSERT INTO "subcategories" VALUES(14,3,'Eventos/Conciertos',4,1,'2025-10-07 04:32:53');
 INSERT INTO "subcategories" VALUES(15,3,'Hobbies',5,1,'2025-10-07 04:32:53');
+
+
 CREATE TABLE transactions (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     user_id INTEGER NOT NULL,
@@ -123,7 +124,27 @@ CREATE TABLE transactions (
     FOREIGN KEY (account_id) REFERENCES accounts(id) ON DELETE RESTRICT,
     FOREIGN KEY (destination_account_id) REFERENCES accounts(id) ON DELETE SET NULL,
     FOREIGN KEY (debt_id) REFERENCES debts(id) ON DELETE SET NULL
+
+    CHECK(
+    -- Condición 1: Si es transferencia
+    (type = 'transferencia' AND destination_account_id IS NOT NULL AND account_id != destination_account_id) 
+    
+    OR -- O cualquiera de estas otras condiciones
+    
+    -- Condición 2: Si es pago de deuda
+    (type = 'pago_deuda' AND debt_id IS NOT NULL) 
+    
+    OR -- O
+    
+    -- Condición 3: Si es ingreso, gasto o deuda simple
+    (type IN ('ingreso', 'gasto', 'deuda'))
+)
 );
+
+
+INSERT INTO "transactions" VALUES(1,1,'gasto',100.00,1,1,1,'Ingreso de prueba','','2025-10-07','2025-10-07 04:32:48','2025-10-07 04:32:48',NULL,NULL);
+
+
 CREATE TABLE tags (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     user_id INTEGER NOT NULL,
