@@ -23,12 +23,11 @@ import {
 import {
   Sheet,
   SheetContent,
-  SheetDescription,
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Home, Layers, Repeat, Search, Upload, User, X } from "lucide-react";
+import { Home, Layers, Repeat, Search, Upload, User, X, Plus } from "lucide-react";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import {
@@ -173,83 +172,56 @@ export function BottomNav() {
   return (
     <>
       <Sheet open={showQuickActions} onOpenChange={setShowQuickActions}>
-        <SheetContent side="bottom">
-          <SheetHeader className="mb-6">
-            <SheetTitle className="text-xl font-bold">
+        <SheetContent side="bottom" className="pb-8">
+          <SheetHeader >
+            <SheetTitle className="text-lg font-semibold text-center">
               Acciones Rápidas
             </SheetTitle>
-            <SheetDescription>
-              Selecciona una acción para continuar
-            </SheetDescription>
           </SheetHeader>
 
-          <div className="flex flex-col gap-4">
+          <div className="flex flex-col gap-2 px-3">
+            {/* Registrar Ingreso */}
             <button
-              onClick={() => {
-                setShowQuickActions(false);
-                handleActionClick("income");
-              }}
-              className="flex flex-col items-center justify-center p-4 bg-white/10 rounded-lg hover:bg-white/20 transition"
+              onClick={() => handleActionClick("income")}
+              className="flex items-center gap-3 p-3.5 bg-gradient-to-r from-emerald-500/10 to-emerald-600/5 border border-emerald-500/20 rounded-xl hover:from-emerald-500/15 hover:to-emerald-600/10 hover:border-emerald-500/30 active:scale-[0.98] transition-all duration-200"
             >
-              <div className="mb-2 p-3 bg-emerald-500/20 rounded-full">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="h-6 w-6 text-emerald-400"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                  strokeWidth={2}
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M12 4v16m8-8H4"
-                  />
-                </svg>
+              <div className="p-2 bg-emerald-500/20 rounded-lg">
+                <Plus className="w-5 h-5 text-emerald-400" strokeWidth={2.5} />
               </div>
-              <span className="text-sm text-white">Agregar Ingreso</span>
+              <span className="text-sm font-medium text-white">Registrar Ingreso</span>
             </button>
 
+            {/* Registrar Gasto */}
             <button
-              onClick={() => {
-                fetch("/api/transaction/income", {
-                  method: "POST",
-                  headers: {
-                    "Content-Type": "application/json",
-                  },
-                  body: JSON.stringify({
-                    amount: 1500.5,
-                    description: "Salario mensual",
-                    date: new Date().toISOString(),
-                    accountId: "1",
-                    categoryId: "1",
-                    subcategoryId: "1",
-                    notes: "Pago de salario",
-                    userId: "1",
-                  }),
-                })
-                  .then((res) => res.json())
-                  .then((data) => console.log(data));
-              }}
-              className="flex flex-col items-center justify-center p-4 bg-white/10 rounded-lg hover:bg-white/20 transition"
+              onClick={() => handleActionClick("expense")}
+              className="flex items-center gap-3 p-3.5 bg-gradient-to-r from-red-500/10 to-red-600/5 border border-red-500/20 rounded-xl hover:from-red-500/15 hover:to-red-600/10 hover:border-red-500/30 active:scale-[0.98] transition-all duration-200"
             >
-              <div className="mb-2 p-3 bg-red-500/20 rounded-full">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="h-6 w-6 text-red-400"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                  strokeWidth={2}
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M12 4v16m8-8H4"
-                  />
-                </svg>
+              <div className="p-2 bg-red-500/20 rounded-lg">
+                <Plus className="w-5 h-5 text-red-400" strokeWidth={2.5} />
               </div>
-              <span className="text-sm text-white">Agregar Gasto</span>
+              <span className="text-sm font-medium text-white">Registrar Gasto</span>
+            </button>
+
+            {/* Nueva Cuenta */}
+            <button
+              onClick={() => handleActionClick("account")}
+              className="flex items-center gap-3 p-3.5 bg-gradient-to-r from-blue-500/10 to-blue-600/5 border border-blue-500/20 rounded-xl hover:from-blue-500/15 hover:to-blue-600/10 hover:border-blue-500/30 active:scale-[0.98] transition-all duration-200"
+            >
+              <div className="p-2 bg-blue-500/20 rounded-lg">
+                <Plus className="w-5 h-5 text-blue-400" strokeWidth={2.5} />
+              </div>
+              <span className="text-sm font-medium text-white">Nueva Cuenta</span>
+            </button>
+
+            {/* Registrar Deuda */}
+            <button
+              onClick={() => handleActionClick("debt")}
+              className="flex items-center gap-3 p-3.5 bg-gradient-to-r from-amber-500/10 to-amber-600/5 border border-amber-500/20 rounded-xl hover:from-amber-500/15 hover:to-amber-600/10 hover:border-amber-500/30 active:scale-[0.98] transition-all duration-200"
+            >
+              <div className="p-2 bg-amber-500/20 rounded-lg">
+                <Plus className="w-5 h-5 text-amber-400" strokeWidth={2.5} />
+              </div>
+              <span className="text-sm font-medium text-white">Registrar Deuda</span>
             </button>
           </div>
         </SheetContent>
