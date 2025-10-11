@@ -1,3 +1,11 @@
+import {
+  Account,
+  ActionType,
+  ApiResponse,
+  Category,
+  Subcategory,
+  TransactionInput,
+} from "@/react-app/dashboard/types";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -21,7 +29,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   DollarSign,
   FileText,
@@ -30,65 +38,104 @@ import {
   Repeat,
   Search,
   Tag,
+  Upload,
   User,
-  Wallet
+  Wallet,
+  X,
 } from "lucide-react";
 import { useState } from "react";
+import { useForm } from "react-hook-form";
+import {
+  defaultIncomeValues,
+  IncomeFormData,
+  IncomeSchema,
+} from "../schems/Income";
+import { zodResolver } from "@hookform/resolvers/zod";
+import {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+  useFormField,
+} from "@/components/ui/form";
 
-type ActionType = "expense" | "income" | "account" | "debt" | null;
-
-// Types para las respuestas de la API
-interface Category {
-  id: number;
-  name: string;
-  type: "ingreso" | "gasto";
-  color: string;
-  icon: string;
-  order_index: number;
-  is_active: boolean;
-  created_at: string;
-}
-
-interface Subcategory {
-  id: number;
-  category_id: number;
-  name: string;
-  order_index: number;
-  is_active: boolean;
-  created_at: string;
-}
-
-interface Account {
-  id: number;
-  user_id: number;
-  name: string;
-  type: "efectivo" | "debito" | "credito" | "banco" | "ahorros" | "inversiones";
-  balance: number;
-  currency: string;
-  color: string | null;
-  icon: string | null;
-  is_active: boolean;
-  created_at: string;
-  updated_at: string;
-}
-interface ApiResponse<T> {
+interface CreateTransactionResponse {
   success: boolean;
-  data: T;
-  count: number;
+  id?: number;
+  error?: string;
 }
 
 export function BottomNav() {
+  interface CreateTransactionResponse {
+    success: boolean;
+    id?: number;
+    error?: string;
+  }
   const [showQuickActions, setShowQuickActions] = useState(false);
   const [activeForm, setActiveForm] = useState<ActionType>(null);
-  const [category, setCategory] = useState<string>("");
-  const [subcategory, setSubcategory] = useState<string>("");
-  // const [amount, setAmount] = useState<string>("");
-  // const [description, setDescription] = useState<string>("");
 
-  const handleCategoryChange = (value: string) => {
-    setCategory(value);
-    setSubcategory("");
-  };
+  const form = useForm<IncomeFormData>({
+    resolver: zodResolver(IncomeSchema),
+    defaultValues: defaultIncomeValues,
+  });
+
+  const queryClient = useQueryClient();
+
+  const { mutate } = useMutation<
+    CreateTransactionResponse,
+    Error,
+    TransactionInput
+  >({
+    mutationFn: async (data: TransactionInput) => {
+      const response = await fetch(`/api/transaction/income`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(data),
+      });
+
+      if (!response.ok) {
+        throw new Error("Error al crear la transacción");
+      }
+
+      return response.json();
+    },
+    onSuccess: () => {
+      // Invalida las queries relacionadas para refrescar los datos
+      queryClient.invalidateQueries({ queryKey: ["transactions"] });
+      queryClient.invalidateQueries({ queryKey: ["accounts"] });
+    },
+  });
+
+  const { reset } = form;
+
+  function onSubmit(data: IncomeFormData) {
+    const transactionData = {
+      amount: data.amount,
+      description: data.description || "",
+      date: new Date().toISOString(),
+      accountId: Number(data.accountId),
+      categoryId: Number(data.categoryId),
+      subcategoryId: data.subcategoryId ? Number(data.subcategoryId) : undefined,
+      notes: "",
+      userId: 1,
+    };
+
+    mutate(transactionData, {
+      onSuccess: (response) => {
+        console.log("Transaction created successfully:", response);
+        handleClose();
+      },
+      onError: (error) => {
+        console.log("Transaction created successfully:", error);
+
+      },
+    });
+  }
 
   const handleActionClick = (actionType: ActionType) => {
     setShowQuickActions(false);
@@ -110,7 +157,7 @@ export function BottomNav() {
     }
   };
 
-  const { data, isPending } = useQuery<ApiResponse<Category[]>>({
+  const { data: categoryData } = useQuery<ApiResponse<Category[]>>({
     queryKey: ["categories"],
     queryFn: async () => {
       const res = await fetch("/api/categories");
@@ -137,8 +184,11 @@ export function BottomNav() {
     },
   });
 
-  console.log("Categories:", data?.data);
-  console.log("Subcategories:", subcategoryData?.data);
+  const handleClose = () => {
+    console.log("reset");
+    setActiveForm(null);
+    reset();
+  };
 
   return (
     <>
@@ -225,136 +275,205 @@ export function BottomNav() {
         </SheetContent>
       </Sheet>
 
-      <Dialog
-        open={activeForm !== null}
-        onOpenChange={(open) => !open && setActiveForm(null)}
-      >
+      <Dialog open={activeForm !== null} onOpenChange={handleClose}>
         <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-[500px]">
           <DialogHeader>
             <DialogTitle>{getDialogTitle()}</DialogTitle>
           </DialogHeader>
           <div className="mt-4">
-            <form className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="amount" className="text-sm font-medium">
-                  Monto *
-                </Label>
-                <div className="relative">
-                  <DollarSign className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                  <Input
-                    id="amount"
-                    type="number"
-                    step="0.01"
-                    placeholder="0.00"
-                    // value={amount}
-                    // onChange={(e) => setAmount(e.target.value)}
-                    className="pl-9"
-                    required
-                  />
-                </div>
-              </div>
-
-              <div className="grid gap-4 sm:grid-cols-2">
-                <div className="space-y-2">
-                  <Label
-                    htmlFor="category"
-                    className="text-sm font-medium flex items-center gap-2"
-                  >
-                    <Tag className="h-3.5 w-3.5" />
-                    Categoría *
-                  </Label>
-                  <Select
-                    value={category}
-                    onValueChange={handleCategoryChange}
-                    required
-                    disabled={isPending}
-                  >
-                    <SelectTrigger id="category">
-                      <SelectValue
-                        placeholder={isPending ? "Cargando..." : "Seleccionar"}
-                      />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {data?.data?.map((cat) => (
-                        <SelectItem key={cat.id} value={cat.id.toString()}>
-                          {cat.icon} {cat.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="space-y-2">
-                  <Label
-                    htmlFor="subcategory"
-                    className="text-sm font-medium flex items-center gap-2"
-                  >
-                    <Tag className="h-3.5 w-3.5" />
-                    Subcategoría
-                  </Label>
-                  <Select
-                    value={subcategory}
-                    onValueChange={setSubcategory}
-                    disabled={isPending}
-                  >
-                    <SelectTrigger id="subcategory">
-                      <SelectValue
-                        placeholder={isPending ? "Cargando..." : "Seleccionar"}
-                      />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {subcategoryData?.data?.map((sub) => (
-                        <SelectItem key={sub.id} value={sub.id.toString()}>
-                          {sub.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label
-                  htmlFor="account"
-                  className="text-sm font-medium flex items-center gap-2"
-                >
-                  <Wallet className="h-3.5 w-3.5" />
-                  Tipo de Cuenta *
-                </Label>
-                <Select required>
-                  <SelectTrigger id="account">
-                    <SelectValue placeholder="Seleccionar" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {accountData?.data?.map((acc) => (
-                      <SelectItem key={acc.id} value={acc.id.toString()}>
-                        {acc.icon} {acc.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <Label
-                  htmlFor="description"
-                  className="text-sm font-medium flex items-center gap-2"
-                >
-                  <FileText className="h-3.5 w-3.5" />
-                  Descripción
-                </Label>
-                <Input
-                  id="description"
-                  placeholder="Ej: Pago de salario mensual"
-                  // value={description}
-                  // onChange={(e) => setDescription(e.target.value)}
+            <Form {...form}>
+              <form
+                onSubmit={form.handleSubmit(onSubmit)}
+                className="space-y-4"
+              >
+                <FormField
+                  control={form.control}
+                  name="amount"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Monto</FormLabel>
+                      <FormControl>
+                        <Input
+                          {...field}
+                          placeholder="0.00"
+                          type="number"
+                          onChange={(e) => {
+                            field.onChange(Number(e.target.value));
+                          }}
+                          className="w-full"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
                 />
-              </div>
 
-              <Button type="submit" className="w-full">
-                Guardar Ingreso
-              </Button>
-            </form>
+                <FormField
+                  control={form.control}
+                  name="categoryId"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Categoría</FormLabel>
+                      <FormControl>
+                        <Select
+                          name={field.name}
+                          value={field.value}
+                          onValueChange={field.onChange}
+                        >
+                          <SelectTrigger id="category" className="w-full">
+                            <SelectValue placeholder="Seleccionar Categoría" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {categoryData?.data.map((cat) => (
+                              <SelectItem
+                                key={cat.id}
+                                value={cat.id.toString()}
+                              >
+                                {cat.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="subcategoryId"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Subcategoría</FormLabel>
+                      <FormControl>
+                        <Select
+                          name={field.name}
+                          value={field.value}
+                          onValueChange={field.onChange}
+                        >
+                          <SelectTrigger id="subcategory" className="w-full">
+                            <SelectValue placeholder="Seleccionar Subcategoría" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {subcategoryData?.data.map((cat) => (
+                              <SelectItem key={cat.id} value={cat.name}>
+                                {cat.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="accountId"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Cuenta</FormLabel>
+                      <FormControl>
+                        <Select
+                          name={field.name}
+                          value={field.value}
+                          onValueChange={field.onChange}
+                        >
+                          <SelectTrigger id="account" className="w-full">
+                            <SelectValue placeholder="Seleccionar Cuenta" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {accountData?.data.map((cat) => (
+                              <SelectItem
+                                key={cat.id}
+                                value={cat.id.toString()}
+                              >
+                                {cat.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="description"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Descripción</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Descripción" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="receipt"
+                  render={({ field: { value, onChange, ...fieldProps } }) => (
+                    <FormItem>
+                      <FormLabel>Comprobante (Opcional)</FormLabel>
+                      <FormControl>
+                        <div className="space-y-2">
+                          <div className="flex items-center gap-2">
+                            <Input
+                              {...fieldProps}
+                              type="file"
+                              accept="image/*,.pdf"
+                              onChange={(e) => {
+                                const file = e.target.files?.[0];
+                                if (file) onChange(file);
+                              }}
+                              className="file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-emerald-50 file:text-emerald-700 hover:file:bg-emerald-100"
+                            />
+                          </div>
+
+                          {value && (
+                            <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
+                              <div className="flex items-center gap-2">
+                                <Upload
+                                  size={16}
+                                  className="text-emerald-600"
+                                />
+                                <span className="text-sm font-medium truncate max-w-[200px]">
+                                  {value.name}
+                                </span>
+                                <span className="text-xs text-muted-foreground">
+                                  ({(value.size / 1024).toFixed(1)} KB)
+                                </span>
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() => onChange(undefined)}
+                                className="text-red-500 hover:text-red-700"
+                              >
+                                <X size={18} />
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      </FormControl>
+                      <FormDescription className="text-xs">
+                        Formatos aceptados: JPG, PNG, WEBP, PDF (Max. 5MB)
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <Button type="submit" className="w-full">
+                  Registrar Gasto
+                </Button>
+              </form>
+            </Form>
           </div>
         </DialogContent>
       </Dialog>

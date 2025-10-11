@@ -1,50 +1,10 @@
 import { Hono } from "hono";
-
-// Types
-interface Category {
-  id: number;
-  name: string;
-  type: "ingreso" | "gasto";
-  color: string;
-  icon: string;
-  order_index: number;
-  is_active: boolean;
-  created_at: string;
-}
-
-interface Subcategory {
-  id: number;
-  category_id: number;
-  name: string;
-  order_index: number;
-  is_active: boolean;
-  created_at: string;
-}
-
-interface Account {
-  id: number;
-  user_id: number;
-  name: string;
-  type: "efectivo" | "debito" | "credito" | "banco" | "ahorros" | "inversiones";
-  balance: number;
-  currency: string;
-  color: string | null;
-  icon: string | null;
-  is_active: boolean;
-  created_at: string;
-  updated_at: string;
-}
-
-interface TransactionInput {
-  amount: number;
-  description?: string;
-  date: string;
-  accountId: number;
-  categoryId?: number;
-  subcategoryId?: number;
-  notes?: string;
-  userId: number;
-}
+import {
+  Category,
+  Account,
+  Subcategory,
+  TransactionInput,
+} from "@/react-app/dashboard/types";
 
 const app = new Hono<{ Bindings: Env }>();
 
@@ -59,20 +19,20 @@ app.get("/api/", async (c) => {
 app.get("/api/categories", async (c) => {
   try {
     const type = c.req.query("type"); // 'ingreso' o 'gasto'
-    
+
     let query = "SELECT * FROM categories WHERE is_active = 1";
     const params: string[] = [];
-    
+
     if (type && (type === "ingreso" || type === "gasto")) {
       query += " AND type = ?";
       params.push(type);
     }
-    
+
     query += " ORDER BY order_index ASC";
-    
+
     const stmt = c.env.DB.prepare(query);
     const { results } = await stmt.bind(...params).all<Category>();
-    
+
     return c.json({
       success: true,
       data: results,
@@ -97,12 +57,12 @@ app.get("/api/categories", async (c) => {
 // app.get("/api/categories/:id", async (c) => {
 //   try {
 //     const id = c.req.param("id");
-    
+
 //     const stmt = c.env.DB.prepare(
 //       "SELECT * FROM categories WHERE id = ? AND is_active = 1"
 //     );
 //     const result = await stmt.bind(id).first<Category>();
-    
+
 //     if (!result) {
 //       return c.json(
 //         {
@@ -112,7 +72,7 @@ app.get("/api/categories", async (c) => {
 //         404
 //       );
 //     }
-    
+
 //     return c.json({
 //       success: true,
 //       data: result,
@@ -141,20 +101,20 @@ app.get("/api/categories", async (c) => {
 app.get("/api/subcategories", async (c) => {
   try {
     const categoryId = c.req.query("categoryId");
-    
+
     let query = "SELECT * FROM subcategories WHERE is_active = 1";
     const params: string[] = [];
-    
+
     if (categoryId) {
       query += " AND category_id = ?";
       params.push(categoryId);
     }
-    
+
     query += " ORDER BY order_index ASC";
-    
+
     const stmt = c.env.DB.prepare(query);
     const { results } = await stmt.bind(...params).all<Subcategory>();
-    
+
     return c.json({
       success: true,
       data: results,
@@ -179,12 +139,12 @@ app.get("/api/subcategories", async (c) => {
 // app.get("/api/subcategories/:id", async (c) => {
 //   try {
 //     const id = c.req.param("id");
-    
+
 //     const stmt = c.env.DB.prepare(
 //       "SELECT * FROM subcategories WHERE id = ? AND is_active = 1"
 //     );
 //     const result = await stmt.bind(id).first<Subcategory>();
-    
+
 //     if (!result) {
 //       return c.json(
 //         {
@@ -194,7 +154,7 @@ app.get("/api/subcategories", async (c) => {
 //         404
 //       );
 //     }
-    
+
 //     return c.json({
 //       success: true,
 //       data: result,
@@ -223,7 +183,7 @@ app.get("/api/subcategories", async (c) => {
 app.get("/api/accounts", async (c) => {
   try {
     const userId = c.req.query("userId");
-    
+
     if (!userId) {
       return c.json(
         {
@@ -233,14 +193,14 @@ app.get("/api/accounts", async (c) => {
         400
       );
     }
-    
+
     const stmt = c.env.DB.prepare(
       `SELECT * FROM accounts 
        WHERE user_id = ? AND is_active = 1 
        ORDER BY created_at DESC`
     );
     const { results } = await stmt.bind(userId).all<Account>();
-    
+
     return c.json({
       success: true,
       data: results,
@@ -267,7 +227,7 @@ app.get("/api/accounts/:id", async (c) => {
   try {
     const id = c.req.param("id");
     const userId = c.req.query("userId");
-    
+
     if (!userId) {
       return c.json(
         {
@@ -277,12 +237,12 @@ app.get("/api/accounts/:id", async (c) => {
         400
       );
     }
-    
+
     const stmt = c.env.DB.prepare(
       "SELECT * FROM accounts WHERE id = ? AND user_id = ? AND is_active = 1"
     );
     const result = await stmt.bind(id, userId).first<Account>();
-    
+
     if (!result) {
       return c.json(
         {
@@ -292,7 +252,7 @@ app.get("/api/accounts/:id", async (c) => {
         404
       );
     }
-    
+
     return c.json({
       success: true,
       data: result,
