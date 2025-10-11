@@ -4,7 +4,6 @@ import {
   ApiResponse,
   Category,
   Subcategory,
-  TransactionInput,
 } from "@/react-app/dashboard/types";
 import { Button } from "@/components/ui/button";
 import {
@@ -29,15 +28,7 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import {
-  Home,
-  Layers,
-  Repeat,
-  Search,
-  Upload,
-  User,
-  X,
-} from "lucide-react";
+import { Home, Layers, Repeat, Search, Upload, User, X } from "lucide-react";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import {
@@ -56,7 +47,6 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 
-
 export function BottomNav() {
   interface CreateTransactionResponse {
     success: boolean;
@@ -73,18 +63,11 @@ export function BottomNav() {
 
   const queryClient = useQueryClient();
 
-  const { mutate } = useMutation<
-    CreateTransactionResponse,
-    Error,
-    TransactionInput
-  >({
-    mutationFn: async (data: TransactionInput) => {
+  const { mutate } = useMutation<CreateTransactionResponse, Error, FormData>({
+    mutationFn: async (data: FormData) => {
       const response = await fetch(`/api/transaction/income`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(data),
+        body: data,
       });
 
       if (!response.ok) {
@@ -103,25 +86,33 @@ export function BottomNav() {
   const { reset } = form;
 
   function onSubmit(data: IncomeFormData) {
-    const transactionData = {
-      amount: data.amount,
-      description: data.description || "",
-      date: new Date().toISOString(),
-      accountId: Number(data.accountId),
-      categoryId: Number(data.categoryId),
-      subcategoryId: data.subcategoryId ? Number(data.subcategoryId) : undefined,
-      notes: "",
-      userId: 1,
-    };
+    const formData = new FormData();
 
-    mutate(transactionData, {
+    formData.append("amount", data.amount.toString());
+    formData.append("description", data.description || "");
+    formData.append("date", new Date().toISOString());
+    formData.append("accountId", data.accountId);
+    formData.append("categoryId", data.categoryId);
+
+    if (data.subcategoryId) {
+      formData.append("subcategoryId", data.subcategoryId);
+    }
+
+    formData.append("userId", "1");
+
+    if (data.file) {
+      formData.append("file", data.file[0]);
+    }
+
+    console.log(formData.values);
+
+    mutate(formData, {
       onSuccess: (response) => {
         console.log("Transaction created successfully:", response);
         handleClose();
       },
       onError: (error) => {
-        console.log("Transaction created successfully:", error);
-
+        console.log("Error:", error);
       },
     });
   }
@@ -346,7 +337,8 @@ export function BottomNav() {
                           </SelectTrigger>
                           <SelectContent>
                             {subcategoryData?.data.map((cat) => (
-                              <SelectItem key={cat.id} value={cat.name}>
+                              <SelectItem key={cat.id} value={cat.id.toString()
+                              }>
                                 {cat.name}
                               </SelectItem>
                             ))}
@@ -406,7 +398,7 @@ export function BottomNav() {
 
                 <FormField
                   control={form.control}
-                  name="receipt"
+                  name="file"
                   render={({ field: { value, onChange, ...fieldProps } }) => (
                     <FormItem>
                       <FormLabel>Comprobante (Opcional)</FormLabel>
@@ -416,11 +408,8 @@ export function BottomNav() {
                             <Input
                               {...fieldProps}
                               type="file"
-                              accept="image/*,.pdf"
-                              onChange={(e) => {
-                                const file = e.target.files?.[0];
-                                if (file) onChange(file);
-                              }}
+                              accept="image/jpeg,image/jpg,image/png,image/webp,application/pdf"
+                              onChange={(e) => onChange(e.target.files)}
                               className="file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-emerald-50 file:text-emerald-700 hover:file:bg-emerald-100"
                             />
                           </div>
@@ -433,10 +422,10 @@ export function BottomNav() {
                                   className="text-emerald-600"
                                 />
                                 <span className="text-sm font-medium truncate max-w-[200px]">
-                                  {value.name}
+                                  {value[0].name}
                                 </span>
                                 <span className="text-xs text-muted-foreground">
-                                  ({(value.size / 1024).toFixed(1)} KB)
+                                  ({(value[0].size / 1024).toFixed(1)} KB)
                                 </span>
                               </div>
                               <button

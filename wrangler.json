@@ -19,7 +19,10 @@
     }
   ],
   "routes": [
-    {"pattern": "financetracker.stephanofer.com", "custom_domain": true}
+    {
+      "pattern": "financetracker.stephanofer.com",
+      "custom_domain": true
+    }
   ],
   /**
    * Smart Placement
@@ -55,5 +58,12 @@
   "assets": {
     "directory": "./dist/client",
     "not_found_handling": "single-page-application"
-  }
+  },
+  "r2_buckets": [
+    {
+      "bucket_name": "fintracker-files",
+      "binding": "BUCKET",
+      "remote": true
+    }
+  ]
 }

@@ -1,10 +1,5 @@
 import { Hono } from "hono";
-import {
-  Category,
-  Account,
-  Subcategory,
-  TransactionInput,
-} from "@/react-app/dashboard/types";
+import { Category, Account, Subcategory } from "@/react-app/dashboard/types";
 
 const app = new Hono<{ Bindings: Env }>();
 
@@ -278,16 +273,27 @@ app.get("/api/accounts/:id", async (c) => {
  * Crea una nueva transacción de ingreso
  */
 app.post("/api/transaction/income", async (c) => {
-  const {
-    amount,
-    description,
-    date,
-    accountId,
+  const body = await c.req.parseBody();
+
+  // Parse form data to proper types
+  const amount = body["amount"] ? parseFloat(body["amount"] as string) : null;
+  const categoryId = body["categoryId"] || null;
+  const subcategoryId = body["subcategoryId"] || null;
+  const accountId = body["accountId"]
+    ? parseInt(body["accountId"] as string)
+    : null;
+  const description = body["description"] || null;
+  const notes = body["notes"] || null;
+  const userId = body["userId"] ? parseInt(body["userId"] as string) : null;
+  const date = body["date"] || new Date().toISOString();
+  const file = body["file"] || null; // Manejo de archivos no implementado
+  console.log("Valores a insertar:", {
+    userId,
     categoryId,
     subcategoryId,
-    notes,
-    userId,
-  }: TransactionInput = await c.req.json();
+    accountId,
+    amount,
+  });
 
   // Validación básica
   if (!amount || !accountId || !userId || !date) {
@@ -298,6 +304,54 @@ app.post("/api/transaction/income", async (c) => {
       },
       400
     );
+  }
+
+  const allowedTypes = [
+    "image/jpeg",
+    "image/jpg",
+    "image/png",
+    "image/webp",
+    "application/pdf",
+  ];
+  if (file && file instanceof File && !allowedTypes.includes(file.type)) {
+    return c.json(
+      {
+        error: "Tipo de archivo no permitido",
+        message: "Solo se aceptan imágenes o PDF",
+      },
+      400
+    );
+  }
+
+  // Validar tamaño (5MB)
+  const MAX_SIZE = 5 * 1024 * 1024;
+  if (file && file instanceof File && file.size > MAX_SIZE) {
+    return c.json(
+      {
+        error: "Archivo muy grande",
+        message: "El archivo debe pesar menos de 5MB",
+      },
+      400
+    );
+  }
+
+  // Solo procesar archivo si existe
+  if (file && file instanceof File) {
+    const timestamp = Date.now();
+    const randomString = Math.random().toString(36).substring(2, 15);
+    const fileExtension = file.name.split(".").pop();
+    const r2Key = `uploads/${timestamp}-${randomString}.${fileExtension}`;
+
+    // 5. Subir archivo a R2
+    await c.env.BUCKET.put(r2Key, file.stream(), {
+      httpMetadata: {
+        contentType: file.type,
+      },
+      customMetadata: {
+        originalName: file.name,
+        uploadedBy: "user",
+      },
+    });
   }
 
   try {

@@ -49,4 +49,5 @@ export interface TransactionInput {
   subcategoryId?: number;
   notes?: string;
   userId: number;
+  file?: File[];
 }
