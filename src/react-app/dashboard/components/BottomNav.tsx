@@ -112,20 +112,22 @@ export function BottomNav() {
       formData.append("file", data.file[0]);
     }
 
-
-    console.log('FormData contents:');
+    console.log("FormData contents:");
     for (const [key, value] of formData.entries()) {
       if (value instanceof File) {
         console.log(`${key}:`, {
           name: value.name,
           size: value.size,
           type: value.type,
-          lastModified: value.lastModified
+          lastModified: value.lastModified,
         });
         // Para ver los primeros bytes del archivo
-        value.arrayBuffer().then(buffer => {
+        value.arrayBuffer().then((buffer) => {
           const bytes = new Uint8Array(buffer);
-          console.log(`${key} - Primeros 20 bytes:`, Array.from(bytes.slice(0, 20)));
+          console.log(
+            `${key} - Primeros 20 bytes:`,
+            Array.from(bytes.slice(0, 20))
+          );
         });
       } else {
         console.log(`${key}:`, value);
@@ -282,9 +284,15 @@ export function BottomNav() {
                         <Input
                           {...field}
                           placeholder="0.00"
-                          type="number"
+                          type="text"
+                          inputMode="decimal"
+                          value={field.value || ""}
                           onChange={(e) => {
-                            field.onChange(Number(e.target.value));
+                            const value = e.target.value;
+                            // Permitir solo números y un punto decimal
+                            if (value === "" || /^\d*\.?\d*$/.test(value)) {
+                              field.onChange(value === "" ? 0 : Number(value));
+                            }
                           }}
                           className="w-full"
                         />
