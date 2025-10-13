@@ -71,7 +71,7 @@ export function BottomNav() {
 
   const queryClient = useQueryClient();
 
-  const { mutate } = useMutation<CreateTransactionResponse, Error, FormData>({
+  const { mutate, isPending} = useMutation<CreateTransactionResponse, Error, FormData>({
     mutationFn: async (data: FormData) => {
       const response = await fetch(`/api/transaction/income`, {
         method: "POST",
@@ -467,8 +467,8 @@ export function BottomNav() {
                   )}
                 />
 
-                <Button type="submit" className="w-full">
-                  Registrar Gasto
+                <Button type="submit" className="w-full" disabled={isPending}>
+                  {isPending ? "Registrando Gasto..." : "Registrar Gasto"}
                 </Button>
               </form>
             </Form>
