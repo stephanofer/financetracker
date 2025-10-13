@@ -280,7 +280,7 @@ app.post("/api/transaction/income", async (c) => {
     const result = await stmt
       .bind(
         userId,
-        "ingreso",
+        "expense",
         amount,
         categoryId || null,
         subcategoryId || null,
