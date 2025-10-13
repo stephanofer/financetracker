@@ -28,11 +28,13 @@ CREATE TABLE sessions (
     is_active BOOLEAN DEFAULT 1,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
+
+
 CREATE TABLE accounts (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     user_id INTEGER NOT NULL,
     name TEXT NOT NULL,
-    type TEXT NOT NULL CHECK(type IN ('efectivo', 'debito', 'credito', 'banco', 'ahorros', 'inversiones')),
+    type TEXT NOT NULL CHECK(type IN ('cash', 'debit', 'credit', 'bank', 'savings', 'investments')),
     balance DECIMAL(15, 2) DEFAULT 0.00,
     currency TEXT DEFAULT 'PEN',
     color TEXT, -- hex color
@@ -49,38 +51,40 @@ INSERT INTO "accounts" VALUES(1,1,'Cuenta de Prueba','banco',1000.00,'PEN','#FF5
 CREATE TABLE categories (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL,
-    type TEXT NOT NULL CHECK(type IN ('ingreso', 'gasto')),
+    type TEXT NOT NULL CHECK(type IN ('income', 'expense')),
     color TEXT NOT NULL, -- hex color
     icon TEXT NOT NULL, -- emoji or icon name
     order_index INTEGER DEFAULT 0,
     is_active BOOLEAN DEFAULT 1,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
-INSERT INTO "categories" VALUES(1,'Comida y Alimentación','gasto','#FF6B6B','🍔',1,1,'2025-10-07 04:32:49');
-INSERT INTO "categories" VALUES(2,'Transporte','gasto','#4ECDC4','🚗',2,1,'2025-10-07 04:32:49');
-INSERT INTO "categories" VALUES(3,'Entretenimiento','gasto','#95E1D3','🎬',3,1,'2025-10-07 04:32:49');
-INSERT INTO "categories" VALUES(4,'Servicios y Facturas','gasto','#FFE66D','💡',4,1,'2025-10-07 04:32:49');
-INSERT INTO "categories" VALUES(5,'Salud','gasto','#FF8B94','🏥',5,1,'2025-10-07 04:32:49');
-INSERT INTO "categories" VALUES(6,'Hogar','gasto','#A8DADC','🏠',6,1,'2025-10-07 04:32:49');
-INSERT INTO "categories" VALUES(7,'Ropa y Calzado','gasto','#E8B4F2','👕',7,1,'2025-10-07 04:32:49');
-INSERT INTO "categories" VALUES(8,'Educación','gasto','#B4E8F2','📚',8,1,'2025-10-07 04:32:49');
-INSERT INTO "categories" VALUES(9,'Regalos y Donaciones','gasto','#FFB4E8','🎁',9,1,'2025-10-07 04:32:49');
-INSERT INTO "categories" VALUES(10,'Otros','gasto','#C0C0C0','💼',10,1,'2025-10-07 04:32:49');
-INSERT INTO "categories" VALUES(11,'Salario','ingreso','#06D6A0','💰',1,1,'2025-10-07 04:32:50');
-INSERT INTO "categories" VALUES(12,'Inversiones','ingreso','#118AB2','📈',2,1,'2025-10-07 04:32:50');
-INSERT INTO "categories" VALUES(13,'Bonos/Extras','ingreso','#FFD166','🎁',3,1,'2025-10-07 04:32:50');
-INSERT INTO "categories" VALUES(14,'Freelance','ingreso','#EF476F','💼',4,1,'2025-10-07 04:32:50');
-INSERT INTO "categories" VALUES(15,'Ventas','ingreso','#8338EC','🏪',5,1,'2025-10-07 04:32:50');
-INSERT INTO "categories" VALUES(16,'Otros ingresos','ingreso','#06FFA5','📊',6,1,'2025-10-07 04:32:50');
-CREATE TABLE subcategories (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    category_id INTEGER NOT NULL,
-    name TEXT NOT NULL,
-    order_index INTEGER DEFAULT 0,
-    is_active BOOLEAN DEFAULT 1,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE CASCADE
-);
+INSERT INTO "categories" VALUES(1,'Comida y Alimentación','expense','#FF6B6B','🍔',1,1,'2025-10-07 04:32:49');
+INSERT INTO "categories" VALUES(2,'Transporte','expense','#4ECDC4','🚗',2,1,'2025-10-07 04:32:49');
+INSERT INTO "categories" VALUES(3,'Entretenimiento','expense','#95E1D3','🎬',3,1,'2025-10-07 04:32:49');
+INSERT INTO "categories" VALUES(4,'Servicios y Facturas','expense','#FFE66D','💡',4,1,'2025-10-07 04:32:49');
+INSERT INTO "categories" VALUES(5,'Salud','expense','#FF8B94','🏥',5,1,'2025-10-07 04:32:49');
+INSERT INTO "categories" VALUES(6,'Hogar','expense','#A8DADC','🏠',6,1,'2025-10-07 04:32:49');
+INSERT INTO "categories" VALUES(7,'Ropa y Calzado','expense','#E8B4F2','👕',7,1,'2025-10-07 04:32:49');
+INSERT INTO "categories" VALUES(8,'Educación','expense','#B4E8F2','📚',8,1,'2025-10-07 04:32:49');
+INSERT INTO "categories" VALUES(9,'Regalos y Donaciones','expense','#FFB4E8','🎁',9,1,'2025-10-07 04:32:49');
+INSERT INTO "categories" VALUES(10,'Otros','expense','#C0C0C0','💼',10,1,'2025-10-07 04:32:49');
+INSERT INTO "categories" VALUES(11,'Salario','income','#06D6A0','💰',1,1,'2025-10-07 04:32:50');
+INSERT INTO "categories" VALUES(12,'Inversiones','income','#118AB2','📈',2,1,'2025-10-07 04:32:50');
+INSERT INTO "categories" VALUES(13,'Bonos/Extras','income','#FFD166','🎁',3,1,'2025-10-07 04:32:50');
+INSERT INTO "categories" VALUES(14,'Freelance','income','#EF476F','💼',4,1,'2025-10-07 04:32:50');
+INSERT INTO "categories" VALUES(15,'Ventas','income','#8338EC','🏪',5,1,'2025-10-07 04:32:50');
+    INSERT INTO "categories" VALUES(16,'Otros incomes','income','#06FFA5','📊',6,1,'2025-10-07 04:32:50');
+
+    CREATE TABLE subcategories (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        category_id INTEGER NOT NULL,
+        name TEXT NOT NULL,
+        order_index INTEGER DEFAULT 0,
+        is_active BOOLEAN DEFAULT 1,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE CASCADE
+    );
+
 INSERT INTO "subcategories" VALUES(1,1,'Supermercado',1,1,'2025-10-07 04:32:51');
 INSERT INTO "subcategories" VALUES(2,1,'Restaurantes',2,1,'2025-10-07 04:32:51');
 INSERT INTO "subcategories" VALUES(3,1,'Comida rápida',3,1,'2025-10-07 04:32:51');
@@ -101,7 +105,7 @@ INSERT INTO "subcategories" VALUES(15,3,'Hobbies',5,1,'2025-10-07 04:32:53');
 CREATE TABLE transactions (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     user_id INTEGER NOT NULL,
-    type TEXT NOT NULL CHECK(type IN ('ingreso', 'gasto', 'deuda', 'pago_deuda', 'transferencia')),
+    type TEXT NOT NULL CHECK(type IN ('income', 'expense', 'debt', 'debt_payment', 'transfer')),
     amount DECIMAL(15, 2) NOT NULL,
     category_id INTEGER,
     subcategory_id INTEGER,
@@ -127,22 +131,39 @@ CREATE TABLE transactions (
 
     CHECK(
     -- Condición 1: Si es transferencia
-    (type = 'transferencia' AND destination_account_id IS NOT NULL AND account_id != destination_account_id) 
+    (type = 'transfer' AND destination_account_id IS NOT NULL AND account_id != destination_account_id) 
     
     OR -- O cualquiera de estas otras condiciones
     
     -- Condición 2: Si es pago de deuda
-    (type = 'pago_deuda' AND debt_id IS NOT NULL) 
+    (type = 'debt_payment' AND debt_id IS NOT NULL) 
     
     OR -- O
     
     -- Condición 3: Si es ingreso, gasto o deuda simple
-    (type IN ('ingreso', 'gasto', 'deuda'))
+    (type IN ('income', 'expense', 'debt'))
 )
 );
 
 
-INSERT INTO "transactions" VALUES(1,1,'gasto',100.00,1,1,1,'Ingreso de prueba','','2025-10-07','2025-10-07 04:32:48','2025-10-07 04:32:48',NULL,NULL);
+INSERT INTO "transactions" VALUES(1,1,'expense',100.00,1,1,1,'Ingreso de prueba','','2025-10-07','2025-10-07 04:32:48','2025-10-07 04:32:48',NULL,NULL);
+
+-- Tabla para almacenar archivos adjuntos de transacciones en R2
+CREATE TABLE attachments (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    transaction_id INTEGER NOT NULL,
+    file_name TEXT NOT NULL,
+    original_file_name TEXT, -- nombre original del archivo subido
+    file_size INTEGER, -- bytes
+    mime_type TEXT,
+    file_type TEXT CHECK(file_type IN ('image', 'pdf', 'document', 'receipt', 'other')), -- tipo de archivo
+    r2_key TEXT NOT NULL UNIQUE, -- key única en R2
+    r2_url TEXT, -- URL pública o presigned
+    description TEXT, -- descripción opcional del archivo
+    uploaded_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (transaction_id) REFERENCES transactions(id) ON DELETE CASCADE
+);
 
 
 CREATE TABLE tags (
@@ -154,6 +175,7 @@ CREATE TABLE tags (
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
     UNIQUE(user_id, name)
 );
+
 CREATE TABLE transaction_tags (
     transaction_id INTEGER NOT NULL,
     tag_id INTEGER NOT NULL,
@@ -162,6 +184,7 @@ CREATE TABLE transaction_tags (
     FOREIGN KEY (transaction_id) REFERENCES transactions(id) ON DELETE CASCADE,
     FOREIGN KEY (tag_id) REFERENCES tags(id) ON DELETE CASCADE
 );
+
 CREATE TABLE debts (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     user_id INTEGER NOT NULL,
@@ -178,6 +201,7 @@ CREATE TABLE debts (
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
+
 CREATE TABLE debt_payments (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     debt_id INTEGER NOT NULL,
@@ -189,6 +213,7 @@ CREATE TABLE debt_payments (
     FOREIGN KEY (debt_id) REFERENCES debts(id) ON DELETE CASCADE,
     FOREIGN KEY (transaction_id) REFERENCES transactions(id) ON DELETE CASCADE
 );
+
 CREATE TABLE budgets (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     user_id INTEGER NOT NULL,
@@ -206,6 +231,7 @@ CREATE TABLE budgets (
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
     FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE CASCADE
 );
+
 CREATE TABLE recurring_expenses (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     user_id INTEGER NOT NULL,
@@ -229,6 +255,7 @@ CREATE TABLE recurring_expenses (
     FOREIGN KEY (subcategory_id) REFERENCES subcategories(id) ON DELETE SET NULL,
     FOREIGN KEY (account_id) REFERENCES accounts(id) ON DELETE RESTRICT
 );
+
 CREATE TABLE savings_goals (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     user_id INTEGER NOT NULL,
@@ -256,17 +283,8 @@ CREATE TABLE goal_contributions (
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (goal_id) REFERENCES savings_goals(id) ON DELETE CASCADE
 );
-CREATE TABLE photos (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    transaction_id INTEGER NOT NULL,
-    file_name TEXT NOT NULL,
-    file_size INTEGER, -- bytes
-    mime_type TEXT,
-    r2_key TEXT NOT NULL, -- key en R2
-    r2_url TEXT, -- URL pública
-    uploaded_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (transaction_id) REFERENCES transactions(id) ON DELETE CASCADE
-);
+
+
 DELETE FROM sqlite_sequence;
 INSERT INTO "sqlite_sequence" VALUES('comments',4);
 INSERT INTO "sqlite_sequence" VALUES('categories',16);
@@ -291,4 +309,6 @@ CREATE INDEX idx_recurring_expenses_next_charge ON recurring_expenses(next_charg
 CREATE INDEX idx_savings_goals_user_id ON savings_goals(user_id);
 CREATE INDEX idx_savings_goals_status ON savings_goals(status);
 CREATE INDEX idx_goal_contributions_goal_id ON goal_contributions(goal_id);
+CREATE INDEX idx_attachments_transaction_id ON attachments(transaction_id);
+CREATE INDEX idx_attachments_file_type ON attachments(file_type);
 CREATE INDEX idx_photos_transaction_id ON photos(transaction_id);
