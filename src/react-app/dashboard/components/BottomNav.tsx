@@ -96,7 +96,7 @@ export function BottomNav() {
   function onSubmit(data: IncomeFormData) {
     const formData = new FormData();
 
-    formData.append("amount", data.amount.toString());
+    formData.append("amount", data.amount);
     formData.append("description", data.description || "");
     formData.append("date", new Date().toISOString());
     formData.append("accountId", data.accountId);
@@ -277,29 +277,23 @@ export function BottomNav() {
                 <FormField
                   control={form.control}
                   name="amount"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Monto</FormLabel>
-                      <FormControl>
-                        <Input
-                          {...field}
-                          placeholder="0.00"
-                          type="text"
-                          inputMode="decimal"
-                          value={field.value || ""}
-                          onChange={(e) => {
-                            const value = e.target.value;
-                            // Permitir solo números y un punto decimal
-                            if (value === "" || /^\d*\.?\d*$/.test(value)) {
-                              field.onChange(value === "" ? 0 : Number(value));
-                            }
-                          }}
-                          className="w-full"
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
+                  render={({ field }) => {
+                    console.log(field);
+                    return (
+                      <FormItem>
+                        <FormLabel>Monto</FormLabel>
+                        <FormControl>
+                          <Input
+                            {...field}
+                            placeholder="0.00"
+                            type="number"
+                            className="w-full"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    );
+                  }}
                 />
 
                 <FormField
