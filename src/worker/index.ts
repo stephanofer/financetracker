@@ -3,17 +3,9 @@ import { Category, Account, Subcategory } from "@/react-app/dashboard/types";
 
 const app = new Hono<{ Bindings: Env }>();
 
-app.get("/api/", async (c) => {
-  const stmt = c.env.DB.prepare("SELECT * FROM comments");
-  const { results } = await stmt.all();
-
-  console.log(results);
-  return c.json(results);
-});
-
 app.get("/api/categories", async (c) => {
   try {
-    const type = c.req.query("type"); // 'ingreso' o 'gasto'
+    const type = c.req.query("type"); 
 
     let query = "SELECT * FROM categories WHERE is_active = 1";
     const params: string[] = [];
@@ -45,48 +37,6 @@ app.get("/api/categories", async (c) => {
   }
 });
 
-// /**
-//  * GET /api/categories/:id
-//  * Obtiene una categoría específica por ID
-//  */
-// app.get("/api/categories/:id", async (c) => {
-//   try {
-//     const id = c.req.param("id");
-
-//     const stmt = c.env.DB.prepare(
-//       "SELECT * FROM categories WHERE id = ? AND is_active = 1"
-//     );
-//     const result = await stmt.bind(id).first<Category>();
-
-//     if (!result) {
-//       return c.json(
-//         {
-//           success: false,
-//           error: "Categoría no encontrada",
-//         },
-//         404
-//       );
-//     }
-
-//     return c.json({
-//       success: true,
-//       data: result,
-//     });
-//   } catch (error) {
-//     console.error("Error al obtener categoría:", error);
-//     return c.json(
-//       {
-//         success: false,
-//         error: "Error al obtener la categoría",
-//       },
-//       500
-//     );
-//   }
-// });
-
-// ============================================
-// SUBCATEGORIES ENDPOINTS
-// ============================================
 
 /**
  * GET /api/subcategories
@@ -126,49 +76,6 @@ app.get("/api/subcategories", async (c) => {
     );
   }
 });
-
-// /**
-//  * GET /api/subcategories/:id
-//  * Obtiene una subcategoría específica por ID
-//  */
-// app.get("/api/subcategories/:id", async (c) => {
-//   try {
-//     const id = c.req.param("id");
-
-//     const stmt = c.env.DB.prepare(
-//       "SELECT * FROM subcategories WHERE id = ? AND is_active = 1"
-//     );
-//     const result = await stmt.bind(id).first<Subcategory>();
-
-//     if (!result) {
-//       return c.json(
-//         {
-//           success: false,
-//           error: "Subcategoría no encontrada",
-//         },
-//         404
-//       );
-//     }
-
-//     return c.json({
-//       success: true,
-//       data: result,
-//     });
-//   } catch (error) {
-//     console.error("Error al obtener subcategoría:", error);
-//     return c.json(
-//       {
-//         success: false,
-//         error: "Error al obtener la subcategoría",
-//       },
-//       500
-//     );
-//   }
-// });
-
-// ============================================
-// ACCOUNTS ENDPOINTS
-// ============================================
 
 /**
  * GET /api/accounts
@@ -264,9 +171,6 @@ app.get("/api/accounts/:id", async (c) => {
   }
 });
 
-// ============================================
-// TRANSACTIONS ENDPOINTS
-// ============================================
 
 /**
  * POST /api/transaction/income
