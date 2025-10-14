@@ -52,8 +52,8 @@ export function useTransactionExpense() {
       return response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["transactions"] });
-      queryClient.invalidateQueries({ queryKey: ["accounts"] });
+      queryClient.invalidateQueries({ refetchType: 'all' });
+
     },
     onError: (error) => {
       // Mostrar notificación de error

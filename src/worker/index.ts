@@ -365,6 +365,168 @@ app.get("/api/accounts/:id", async (c) => {
 });
 
 /**
+ * GET /api/accounts/balance/total
+ * Obtiene el balance total de todas las cuentas activas de un usuario
+ * Query params: userId (required): number
+ */
+app.get("/api/accounts/balance/total", async (c) => {
+  try {
+    const userId = c.req.query("userId");
+
+    if (!userId) {
+      return c.json(
+        {
+          success: false,
+          error: "El parámetro userId es requerido",
+        },
+        400
+      );
+    }
+
+    const stmt = c.env.DB.prepare(
+      `SELECT 
+         SUM(balance) as total_balance,
+         COUNT(*) as total_accounts
+       FROM accounts 
+       WHERE user_id = ? AND is_active = 1`
+    );
+    const result = await stmt.bind(userId).first<{
+      total_balance: number | null;
+      total_accounts: number;
+    }>();
+
+    return c.json({
+      success: true,
+      data: {
+        total_balance: result?.total_balance || 0,
+        total_accounts: result?.total_accounts || 0,
+      },
+    });
+  } catch (error) {
+    console.error("Error al obtener balance total:", error);
+    return c.json(
+      {
+        success: false,
+        error: "Error al obtener el balance total",
+      },
+      500
+    );
+  }
+});
+
+/**
+ * GET /api/transactions/expenses
+ * Obtiene todos los gastos de un usuario con información detallada
+ * Query params: 
+ *   - userId (required): number
+ *   - limit (optional): number - cantidad de registros a devolver
+ *   - offset (optional): number - para paginación
+ *   - startDate (optional): string - fecha inicio (ISO format)
+ *   - endDate (optional): string - fecha fin (ISO format)
+ */
+app.get("/api/transactions/expenses", async (c) => {
+  try {
+    const userId = c.req.query("userId");
+    const limit = c.req.query("limit");
+    const offset = c.req.query("offset") || "0";
+    const startDate = c.req.query("startDate");
+    const endDate = c.req.query("endDate");
+
+    if (!userId) {
+      return c.json(
+        {
+          success: false,
+          error: "El parámetro userId es requerido",
+        },
+        400
+      );
+    }
+
+    let query = `
+      SELECT 
+        t.*,
+        c.name as category_name,
+        c.icon as category_icon,
+        c.color as category_color,
+        s.name as subcategory_name,
+        a.name as account_name,
+        a.type as account_type
+      FROM transactions t
+      LEFT JOIN categories c ON t.category_id = c.id
+      LEFT JOIN subcategories s ON t.subcategory_id = s.id
+      LEFT JOIN accounts a ON t.account_id = a.id
+      WHERE t.user_id = ? AND t.type = 'expense'
+    `;
+    const params: (string | number)[] = [userId];
+
+    if (startDate) {
+      query += " AND t.transaction_date >= ?";
+      params.push(startDate);
+    }
+
+    if (endDate) {
+      query += " AND t.transaction_date <= ?";
+      params.push(endDate);
+    }
+
+    query += " ORDER BY t.transaction_date DESC, t.created_at DESC";
+
+    if (limit) {
+      query += " LIMIT ? OFFSET ?";
+      params.push(parseInt(limit), parseInt(offset));
+    }
+
+    const stmt = c.env.DB.prepare(query);
+    const { results } = await stmt.bind(...params).all();
+
+    // Obtener el total de gastos (sin límite)
+    const totalStmt = c.env.DB.prepare(
+      `SELECT 
+         SUM(amount) as total_expenses,
+         COUNT(*) as total_count
+       FROM transactions 
+       WHERE user_id = ? AND type = 'expense'
+       ${startDate ? "AND transaction_date >= ?" : ""}
+       ${endDate ? "AND transaction_date <= ?" : ""}`
+    );
+
+    const totalParams: string[] = [userId];
+    if (startDate) totalParams.push(startDate);
+    if (endDate) totalParams.push(endDate);
+
+    const totalResult = await totalStmt.bind(...totalParams).first<{
+      total_expenses: number | null;
+      total_count: number;
+    }>();
+
+    return c.json({
+      success: true,
+      data: results,
+      count: results.length,
+      total: {
+        total_expenses: totalResult?.total_expenses || 0,
+        total_count: totalResult?.total_count || 0,
+      },
+      pagination: limit
+        ? {
+            limit: parseInt(limit),
+            offset: parseInt(offset),
+          }
+        : null,
+    });
+  } catch (error) {
+    console.error("Error al obtener gastos:", error);
+    return c.json(
+      {
+        success: false,
+        error: "Error al obtener los gastos",
+      },
+      500
+    );
+  }
+});
+
+/**
  * GET /api/transactions/:id/attachments
  * Obtiene todos los archivos adjuntos de una transacción
  */
