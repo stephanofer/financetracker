@@ -3,7 +3,6 @@ import { Category, Account, Subcategory } from "@/react-app/dashboard/types";
 
 const app = new Hono<{ Bindings: Env }>();
 
-// Constantes para validación de archivos
 const ALLOWED_FILE_TYPES = [
   "image/jpeg",
   "image/jpg",
@@ -15,10 +14,35 @@ const ALLOWED_FILE_TYPES = [
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB en bytes
 
 /**
- * POST /api/transaction/income
- * Crea una nueva transacción de gasto
+ * Actualiza el balance de una cuenta según el tipo de transacción
+ * @param db - Instancia de la base de datos
+ * @param accountId - ID de la cuenta a actualizar
+ * @param amount - Monto de la transacción
+ * @param type - Tipo de transacción ('income' o 'expense')
  */
-app.post("/api/transaction/expense", async (c) => {
+async function updateAccountBalance(
+  db: D1Database,
+  accountId: number,
+  amount: number,
+  type: string
+) {
+  const operation = type === "income" ? "+" : "-";
+  
+  const stmt = db.prepare(
+    `UPDATE accounts 
+     SET balance = balance ${operation} ?, 
+         updated_at = CURRENT_TIMESTAMP 
+     WHERE id = ?`
+  );
+  
+  await stmt.bind(amount, accountId).run();
+}
+
+/**
+ * POST /api/transaction
+ * Crea una nueva transacción (ingreso o gasto) y actualiza el balance de la cuenta
+ */
+app.post("/api/transaction", async (c) => {
   const body = await c.req.parseBody();
 
   const amount = body["amount"] ? parseFloat(body["amount"] as string) : null;
@@ -32,16 +56,27 @@ app.post("/api/transaction/expense", async (c) => {
     ? parseInt(body["accountId"] as string)
     : null;
   const description = body["description"] || null;
+  const type = body["type"];
   const notes = body["notes"] || null;
   const userId = body["userId"] ? parseInt(body["userId"] as string) : null;
   const date = body["date"] || new Date().toISOString();
   const file = body["file"] || null;
 
-  if (!amount || !accountId || !userId) {
+  if (!amount || !accountId || !userId || !type) {
     return c.json(
       {
         success: false,
-        error: "amount, accountId, userId y date son requeridos",
+        error: "amount, accountId, userId y type son requeridos",
+      },
+      400
+    );
+  }
+
+  if (type !== "income" && type !== "expense") {
+    return c.json(
+      {
+        success: false,
+        error: "type debe ser 'income' o 'expense'",
       },
       400
     );
@@ -101,7 +136,7 @@ app.post("/api/transaction/expense", async (c) => {
     const result = await stmt
       .bind(
         userId,
-        "expense",
+        type,
         amount,
         categoryId || null,
         subcategoryId || null,
@@ -141,6 +176,9 @@ app.post("/api/transaction/expense", async (c) => {
         )
         .run();
     }
+
+    // Actualizar el balance de la cuenta
+    await updateAccountBalance(c.env.DB, accountId, amount, type as string);
 
     return c.json({
       success: true,

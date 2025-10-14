@@ -1,9 +1,9 @@
-export type ActionType = "expense" | "income" | "account" | "debt" | null;
+export type ActionType = "expense" | "income" | null;
 
 export interface Category {
   id: number;
   name: string;
-  type: "ingreso" | "gasto";
+  type: "income" | "expense";
   color: string;
   icon: string;
   order_index: number;
@@ -24,7 +24,7 @@ export interface Account {
   id: number;
   user_id: number;
   name: string;
-  type: "efectivo" | "debito" | "credito" | "banco" | "ahorros" | "inversiones";
+  type: "cash" | "debit" | "credit" | "bank" | "savings" | "investments";
   balance: number;
   currency: string;
   color: string | null;
@@ -67,12 +67,6 @@ export interface Transaction {
   attachments?: Attachment[]; // archivos adjuntos opcionales
 }
 
-export interface ApiResponse<T> {
-  success: boolean;
-  data: T;
-  count: number;
-}
-
 export interface TransactionInput {
   amount: number;
   description?: string;
@@ -83,4 +77,18 @@ export interface TransactionInput {
   notes?: string;
   userId: number;
   file?: File[]; // archivos adjuntos
+}
+
+export interface ApiResponse<T> {
+  success: boolean;
+  data: T;
+}
+
+export interface ApiResponseTransaction {
+  success: boolean;
+  id: number;
+  attachment: {
+    r2_key: string;
+    r2_url: string;
+  } | null;
 }

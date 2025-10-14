@@ -8,7 +8,7 @@ const ACCEPTED_FILE_TYPES = [
   "application/pdf",
 ];
 
-export const IncomeSchema = z.object({
+export const TransactionSchema = z.object({
   amount: z
     .string()
     .min(1, "El monto es requerido")
@@ -32,9 +32,9 @@ export const IncomeSchema = z.object({
     .optional(),
 });
 
-export type IncomeFormData = z.infer<typeof IncomeSchema>;
+export type TransactionSchemaFormData = z.infer<typeof TransactionSchema>;
 
-export const defaultIncomeValues: IncomeFormData = {
+export const defaultTransactionValues: TransactionSchemaFormData = {
   amount: "0",
   categoryId: "",
   accountId: "",
