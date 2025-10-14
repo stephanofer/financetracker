@@ -1,14 +1,167 @@
 import { Hono } from "hono";
 import { Category, Account, Subcategory } from "@/react-app/dashboard/types";
 
-// Tipos Attachment y Transaction disponibles si se necesitan en el futuro
-// import type { Attachment, Transaction } from "@/react-app/dashboard/types";
-
 const app = new Hono<{ Bindings: Env }>();
+
+// Constantes para validación de archivos
+const ALLOWED_FILE_TYPES = [
+  "image/jpeg",
+  "image/jpg",
+  "image/png",
+  "image/webp",
+  "application/pdf",
+];
+
+const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB en bytes
+
+/**
+ * POST /api/transaction/income
+ * Crea una nueva transacción de gasto
+ */
+app.post("/api/transaction/expense", async (c) => {
+  const body = await c.req.parseBody();
+
+  const amount = body["amount"] ? parseFloat(body["amount"] as string) : null;
+  const categoryId = body["categoryId"]
+    ? parseInt(body["categoryId"] as string)
+    : null;
+  const subcategoryId = body["subcategoryId"]
+    ? parseInt(body["subcategoryId"] as string)
+    : null;
+  const accountId = body["accountId"]
+    ? parseInt(body["accountId"] as string)
+    : null;
+  const description = body["description"] || null;
+  const notes = body["notes"] || null;
+  const userId = body["userId"] ? parseInt(body["userId"] as string) : null;
+  const date = body["date"] || new Date().toISOString();
+  const file = body["file"] || null;
+
+  if (!amount || !accountId || !userId) {
+    return c.json(
+      {
+        success: false,
+        error: "amount, accountId, userId y date son requeridos",
+      },
+      400
+    );
+  }
+
+  if (file && file instanceof File && !ALLOWED_FILE_TYPES.includes(file.type)) {
+    return c.json(
+      {
+        error: "Tipo de archivo no permitido",
+        message: "Solo se aceptan imágenes o PDF",
+      },
+      400
+    );
+  }
+
+  if (file && file instanceof File && file.size > MAX_FILE_SIZE) {
+    return c.json(
+      {
+        error: "Archivo muy grande",
+        message: "El archivo debe pesar menos de 5MB",
+      },
+      400
+    );
+  }
+
+  let r2Key: string | null = null;
+  let r2Url: string | null = null;
+  let uploadedFile: File | null = null;
+
+  if (file && file instanceof File) {
+    const timestamp = Date.now();
+    const randomString = Math.random().toString(36).substring(2, 15);
+    const fileExtension = file.name.split(".").pop();
+    r2Key = `uploads/${timestamp}-${randomString}.${fileExtension}`;
+
+    await c.env.BUCKET.put(r2Key, file.stream(), {
+      httpMetadata: {
+        contentType: file.type,
+      },
+      customMetadata: {
+        originalName: file.name,
+        uploadedBy: "user",
+      },
+    });
+
+    r2Url = `https://cdnfintracker.stephanofer.com/${r2Key}`;
+    uploadedFile = file;
+  }
+
+  try {
+    const stmt = c.env.DB.prepare(
+      `INSERT INTO transactions 
+       (user_id, type, amount, category_id, subcategory_id, account_id, description, notes, transaction_date) 
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
+    );
+
+    const result = await stmt
+      .bind(
+        userId,
+        "expense",
+        amount,
+        categoryId || null,
+        subcategoryId || null,
+        accountId,
+        description || null,
+        notes || null,
+        date
+      )
+      .run();
+
+    const transactionId = result.meta.last_row_id;
+
+    if (uploadedFile && r2Key) {
+      const fileType = uploadedFile.type.startsWith("image/")
+        ? "image"
+        : uploadedFile.type === "application/pdf"
+        ? "pdf"
+        : "other";
+
+      const attachmentStmt = c.env.DB.prepare(
+        `INSERT INTO attachments 
+         (transaction_id, file_name, original_file_name, file_size, mime_type, file_type, r2_key, r2_url, description) 
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
+      );
+
+      await attachmentStmt
+        .bind(
+          transactionId,
+          r2Key.split("/").pop(), // nombre del archivo en R2
+          uploadedFile.name, // nombre original
+          uploadedFile.size,
+          uploadedFile.type,
+          fileType,
+          r2Key,
+          r2Url,
+          description || null
+        )
+        .run();
+    }
+
+    return c.json({
+      success: true,
+      id: transactionId,
+      attachment: uploadedFile ? { r2_key: r2Key, r2_url: r2Url } : null,
+    });
+  } catch (error) {
+    console.error("Error al insertar transacción:", error);
+    return c.json(
+      {
+        success: false,
+        error: "Error al crear la transacción",
+      },
+      500
+    );
+  }
+});
 
 app.get("/api/categories", async (c) => {
   try {
-    const type = c.req.query("type"); 
+    const type = c.req.query("type");
 
     let query = "SELECT * FROM categories WHERE is_active = 1";
     const params: string[] = [];
@@ -39,7 +192,6 @@ app.get("/api/categories", async (c) => {
     );
   }
 });
-
 
 /**
  * GET /api/subcategories
@@ -174,171 +326,6 @@ app.get("/api/accounts/:id", async (c) => {
   }
 });
 
-
-/**
- * POST /api/transaction/income
- * Crea una nueva transacción de ingreso
- */
-app.post("/api/transaction/income", async (c) => {
-  const body = await c.req.parseBody();
-
-  // Parse form data to proper types
-  const amount = body["amount"] ? parseFloat(body["amount"] as string) : null;
-  const categoryId = body["categoryId"] ? parseInt(body["categoryId"] as string) : null;
-  const subcategoryId = body["subcategoryId"] ? parseInt(body["subcategoryId"] as string) : null;
-  const accountId = body["accountId"]
-    ? parseInt(body["accountId"] as string)
-    : null;
-  const description = body["description"] || null;
-  const notes = body["notes"] || null;
-  const userId = body["userId"] ? parseInt(body["userId"] as string) : null;
-  const date = body["date"] || new Date().toISOString();
-  const file = body["file"] || null;
-  console.log("Valores a insertar:", {
-    userId,
-    categoryId,
-    subcategoryId,
-    accountId,
-    amount,
-  });
-
-  if (!amount || !accountId || !userId) {
-    return c.json(
-      {
-        success: false,
-        error: "amount, accountId, userId y date son requeridos",
-      },
-      400
-    );
-  }
-
-  const allowedTypes = [
-    "image/jpeg",
-    "image/jpg",
-    "image/png",
-    "image/webp",
-    "application/pdf",
-  ];
-
-  if (file && file instanceof File && !allowedTypes.includes(file.type)) {
-    return c.json(
-      {
-        error: "Tipo de archivo no permitido",
-        message: "Solo se aceptan imágenes o PDF",
-      },
-      400
-    );
-  }
-
-  // Validar tamaño (5MB)
-  const MAX_SIZE = 5 * 1024 * 1024;
-  if (file && file instanceof File && file.size > MAX_SIZE) {
-    return c.json(
-      {
-        error: "Archivo muy grande",
-        message: "El archivo debe pesar menos de 5MB",
-      },
-      400
-    );
-  }
-
-  // Solo procesar archivo si existe
-  let r2Key: string | null = null;
-  let r2Url: string | null = null;
-  let uploadedFile: File | null = null;
-
-  if (file && file instanceof File) {
-    const timestamp = Date.now();
-    const randomString = Math.random().toString(36).substring(2, 15);
-    const fileExtension = file.name.split(".").pop();
-    r2Key = `uploads/${timestamp}-${randomString}.${fileExtension}`;
-
-    // 5. Subir archivo a R2
-    await c.env.BUCKET.put(r2Key, file.stream(), {
-      httpMetadata: {
-        contentType: file.type,
-      },
-      customMetadata: {
-        originalName: file.name,
-        uploadedBy: "user",
-      },
-    });
-
-    // Generar URL pública (ajustar según tu configuración de R2)
-    r2Url = `https://your-r2-domain.com/${r2Key}`;
-    uploadedFile = file;
-  }
-
-  try {
-    // Insertar la transacción
-    const stmt = c.env.DB.prepare(
-      `INSERT INTO transactions 
-       (user_id, type, amount, category_id, subcategory_id, account_id, description, notes, transaction_date) 
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
-    );
-
-    const result = await stmt
-      .bind(
-        userId,
-        "expense",
-        amount,
-        categoryId || null,
-        subcategoryId || null,
-        accountId,
-        description || null,
-        notes || null,
-        date
-      )
-      .run();
-
-    const transactionId = result.meta.last_row_id;
-
-    // Si hay archivo, guardar en la tabla attachments
-    if (uploadedFile && r2Key) {
-      const fileType = uploadedFile.type.startsWith("image/")
-        ? "image"
-        : uploadedFile.type === "application/pdf"
-        ? "pdf"
-        : "other";
-
-      const attachmentStmt = c.env.DB.prepare(
-        `INSERT INTO attachments 
-         (transaction_id, file_name, original_file_name, file_size, mime_type, file_type, r2_key, r2_url, description) 
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
-      );
-
-      await attachmentStmt
-        .bind(
-          transactionId,
-          r2Key.split("/").pop(), // nombre del archivo en R2
-          uploadedFile.name, // nombre original
-          uploadedFile.size,
-          uploadedFile.type,
-          fileType,
-          r2Key,
-          r2Url,
-          description || null
-        )
-        .run();
-    }
-
-    return c.json({
-      success: true,
-      id: transactionId,
-      attachment: uploadedFile ? { r2_key: r2Key, r2_url: r2Url } : null,
-    });
-  } catch (error) {
-    console.error("Error al insertar transacción:", error);
-    return c.json(
-      {
-        success: false,
-        error: "Error al crear la transacción",
-      },
-      500
-    );
-  }
-});
-
 /**
  * GET /api/transactions/:id/attachments
  * Obtiene todos los archivos adjuntos de una transacción
@@ -398,9 +385,7 @@ app.delete("/api/attachments/:id", async (c) => {
     await c.env.BUCKET.delete(attachment.r2_key as string);
 
     // Eliminar de la base de datos
-    const deleteStmt = c.env.DB.prepare(
-      `DELETE FROM attachments WHERE id = ?`
-    );
+    const deleteStmt = c.env.DB.prepare(`DELETE FROM attachments WHERE id = ?`);
     await deleteStmt.bind(attachmentId).run();
 
     return c.json({

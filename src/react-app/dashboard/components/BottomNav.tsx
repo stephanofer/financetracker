@@ -58,6 +58,7 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
+import { toast } from "sonner";
 
 export function BottomNav() {
   interface CreateTransactionResponse {
@@ -76,29 +77,95 @@ export function BottomNav() {
 
   const queryClient = useQueryClient();
 
-  const { mutate, isPending} = useMutation<CreateTransactionResponse, Error, FormData>({
+  const { mutate, isPending } = useMutation<
+    CreateTransactionResponse,
+    Error,
+    FormData
+  >({
     mutationFn: async (data: FormData) => {
-      const response = await fetch(`/api/transaction/income`, {
+      const response = await fetch(`/api/transaction/expense`, {
         method: "POST",
         body: data,
       });
 
       if (!response.ok) {
-        throw new Error("Error al crear la transacción");
+        // Intentar obtener el mensaje de error del servidor
+        let errorMessage = "Error al crear la transacción";
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.error || errorData.message || errorMessage;
+        } catch {
+          // Si no se puede parsear el error, usar mensajes por código de estado
+          switch (response.status) {
+            case 400:
+              errorMessage =
+                "Datos inválidos. Por favor verifica la información ingresada.";
+              break;
+            case 401:
+              errorMessage = "No estás autenticado. Por favor inicia sesión.";
+              break;
+            case 403:
+              errorMessage = "No tienes permisos para realizar esta acción.";
+              break;
+            case 404:
+              errorMessage = "Recurso no encontrado.";
+              break;
+            case 413:
+              errorMessage = "El archivo es demasiado grande. Máximo 5MB.";
+              break;
+            case 500:
+              errorMessage = "Error del servidor. Por favor intenta más tarde.";
+              break;
+            case 503:
+              errorMessage =
+                "Servicio no disponible. Por favor intenta más tarde.";
+              break;
+            default:
+              errorMessage = `Error al crear la transacción (${response.status})`;
+          }
+        }
+        throw new Error(errorMessage);
       }
 
       return response.json();
     },
     onSuccess: () => {
-      // Invalida las queries relacionadas para refrescar los datos
+      // Invalidar queries para actualizar la UI
       queryClient.invalidateQueries({ queryKey: ["transactions"] });
       queryClient.invalidateQueries({ queryKey: ["accounts"] });
+
+      // Mostrar notificación de éxito
+      toast.success("¡Transacción registrada!", {
+        description: "El ingreso se ha registrado correctamente.",
+        duration: 4000,
+      });
+    },
+    onError: (error) => {
+      // Mostrar notificación de error
+      toast.error("Error al registrar transacción", {
+        description:
+          error.message ||
+          "Ocurrió un error inesperado. Por favor intenta nuevamente.",
+        duration: 5000,
+      });
     },
   });
 
   const { reset } = form;
 
   function onSubmit(data: IncomeFormData) {
+    // Validar tamaño del archivo antes de enviar
+    if (data.file && data.file[0]) {
+      const maxSize = 5 * 1024 * 1024; // 5MB
+      if (data.file[0].size > maxSize) {
+        toast.error("Archivo demasiado grande", {
+          description: "El archivo no debe superar los 5MB.",
+          duration: 4000,
+        });
+        return;
+      }
+    }
+
     const formData = new FormData();
 
     formData.append("amount", data.amount);
@@ -117,34 +184,20 @@ export function BottomNav() {
       formData.append("file", data.file[0]);
     }
 
-    console.log("FormData contents:");
-    for (const [key, value] of formData.entries()) {
-      if (value instanceof File) {
-        console.log(`${key}:`, {
-          name: value.name,
-          size: value.size,
-          type: value.type,
-          lastModified: value.lastModified,
-        });
-        // Para ver los primeros bytes del archivo
-        value.arrayBuffer().then((buffer) => {
-          const bytes = new Uint8Array(buffer);
-          console.log(
-            `${key} - Primeros 20 bytes:`,
-            Array.from(bytes.slice(0, 20))
-          );
-        });
-      } else {
-        console.log(`${key}:`, value);
-      }
-    }
+    // Mostrar toast de carga
+    const loadingToast = toast.loading("Registrando transacción...", {
+      description: "Por favor espera un momento.",
+    });
+
     mutate(formData, {
-      onSuccess: (response) => {
-        console.log("Transaction created successfully:", response);
+      onSuccess: () => {
+        // Cerrar el toast de carga
+        toast.dismiss(loadingToast);
         handleClose();
       },
-      onError: (error) => {
-        console.log("Error:", error);
+      onError: () => {
+        // Cerrar el toast de carga
+        toast.dismiss(loadingToast);
       },
     });
   }
@@ -173,7 +226,13 @@ export function BottomNav() {
     queryKey: ["categories"],
     queryFn: async () => {
       const res = await fetch("/api/categories");
-      if (!res.ok) throw new Error("Error fetching categories");
+      if (!res.ok) {
+        const errorMsg = "Error al cargar las categorías";
+        toast.error("Error de conexión", {
+          description: errorMsg,
+        });
+        throw new Error(errorMsg);
+      }
       return res.json();
     },
   });
@@ -182,7 +241,13 @@ export function BottomNav() {
     queryKey: ["subcategories"],
     queryFn: async () => {
       const res = await fetch("/api/subcategories");
-      if (!res.ok) throw new Error("Error fetching subcategories");
+      if (!res.ok) {
+        const errorMsg = "Error al cargar las subcategorías";
+        toast.error("Error de conexión", {
+          description: errorMsg,
+        });
+        throw new Error(errorMsg);
+      }
       return res.json();
     },
   });
@@ -191,7 +256,13 @@ export function BottomNav() {
     queryKey: ["accounts"],
     queryFn: async () => {
       const res = await fetch("/api/accounts?userId=1");
-      if (!res.ok) throw new Error("Error fetching accounts");
+      if (!res.ok) {
+        const errorMsg = "Error al cargar las cuentas";
+        toast.error("Error de conexión", {
+          description: errorMsg,
+        });
+        throw new Error(errorMsg);
+      }
       return res.json();
     },
   });
@@ -405,7 +476,11 @@ export function BottomNav() {
                     <FormItem>
                       <FormLabel>Descripción</FormLabel>
                       <FormControl>
-                        <Input placeholder="Descripción" {...field} autoComplete="off" />
+                        <Input
+                          placeholder="Descripción"
+                          {...field}
+                          autoComplete="off"
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -427,11 +502,11 @@ export function BottomNav() {
                             onChange={(e) => {
                               const files = e.target.files;
                               onChange(files);
-                              
+
                               // Generar vista previa
                               if (files && files[0]) {
                                 const file = files[0];
-                                if (file.type.startsWith('image/')) {
+                                if (file.type.startsWith("image/")) {
                                   const reader = new FileReader();
                                   reader.onloadend = () => {
                                     setFilePreview(reader.result as string);
@@ -447,7 +522,7 @@ export function BottomNav() {
                             className="hidden"
                             id="file-upload"
                           />
-                          
+
                           {!value || !value[0] ? (
                             <label
                               htmlFor="file-upload"
@@ -456,10 +531,13 @@ export function BottomNav() {
                               <div className="relative">
                                 <div className="absolute inset-0 bg-emerald-500/20 blur-xl rounded-full group-hover:bg-emerald-400/30 transition-all duration-300"></div>
                                 <div className="relative p-4 bg-gradient-to-br from-slate-700/50 to-slate-800/50 rounded-2xl group-hover:from-emerald-500/20 group-hover:to-emerald-600/10 transition-all duration-300 border border-slate-600/30 group-hover:border-emerald-500/40">
-                                  <Upload className="w-8 h-8 text-slate-400 group-hover:text-emerald-400 transition-all duration-300 group-hover:scale-110" strokeWidth={2} />
+                                  <Upload
+                                    className="w-8 h-8 text-slate-400 group-hover:text-emerald-400 transition-all duration-300 group-hover:scale-110"
+                                    strokeWidth={2}
+                                  />
                                 </div>
                               </div>
-                              
+
                               <div className="text-center space-y-1">
                                 <p className="text-sm font-semibold text-slate-200 group-hover:text-emerald-300 transition-colors">
                                   Arrastra tu archivo o haz clic
@@ -472,69 +550,90 @@ export function BottomNav() {
                           ) : (
                             <div className="space-y-3">
                               {/* Vista previa de imagen */}
-                              {value[0].type.startsWith('image/') && filePreview && (
-                                <div className="relative w-full h-48 rounded-2xl overflow-hidden bg-slate-900/50 border-2 border-emerald-500/30 group/preview">
-                                  <img
-                                    src={filePreview}
-                                    alt="Vista previa"
-                                    className="w-full h-full object-cover"
-                                  />
-                                  <div className="absolute inset-0 bg-gradient-to-t from-slate-900/90 via-slate-900/20 to-transparent"></div>
-                                  
-                                  {/* Badge de éxito */}
-                                  <div className="absolute top-3 right-3 flex items-center gap-1.5 px-2.5 py-1.5 bg-emerald-500/90 backdrop-blur-sm rounded-full">
-                                    <Check className="w-3.5 h-3.5 text-white" strokeWidth={3} />
-                                    <span className="text-xs font-semibold text-white">Listo</span>
-                                  </div>
-                                  
-                                  {/* Información del archivo */}
-                                  <div className="absolute bottom-3 left-3 right-3">
-                                    <div className="flex items-start justify-between gap-2">
-                                      <div className="flex items-center gap-2 min-w-0 flex-1">
-                                        <div className="p-2 bg-white/10 backdrop-blur-md rounded-lg border border-white/20">
-                                          <ImageIcon className="w-4 h-4 text-white" strokeWidth={2} />
+                              {value[0].type.startsWith("image/") &&
+                                filePreview && (
+                                  <div className="relative w-full h-48 rounded-2xl overflow-hidden bg-slate-900/50 border-2 border-emerald-500/30 group/preview">
+                                    <img
+                                      src={filePreview}
+                                      alt="Vista previa"
+                                      className="w-full h-full object-cover"
+                                    />
+                                    <div className="absolute inset-0 bg-gradient-to-t from-slate-900/90 via-slate-900/20 to-transparent"></div>
+
+                                    {/* Badge de éxito */}
+                                    <div className="absolute top-3 right-3 flex items-center gap-1.5 px-2.5 py-1.5 bg-emerald-500/90 backdrop-blur-sm rounded-full">
+                                      <Check
+                                        className="w-3.5 h-3.5 text-white"
+                                        strokeWidth={3}
+                                      />
+                                      <span className="text-xs font-semibold text-white">
+                                        Listo
+                                      </span>
+                                    </div>
+
+                                    {/* Información del archivo */}
+                                    <div className="absolute bottom-3 left-3 right-3">
+                                      <div className="flex items-start justify-between gap-2">
+                                        <div className="flex items-center gap-2 min-w-0 flex-1">
+                                          <div className="p-2 bg-white/10 backdrop-blur-md rounded-lg border border-white/20">
+                                            <ImageIcon
+                                              className="w-4 h-4 text-white"
+                                              strokeWidth={2}
+                                            />
+                                          </div>
+                                          <div className="min-w-0 flex-1">
+                                            <p className="text-sm font-medium text-white truncate">
+                                              {value[0].name}
+                                            </p>
+                                            <p className="text-xs text-slate-300">
+                                              {(value[0].size / 1024).toFixed(
+                                                1
+                                              )}{" "}
+                                              KB
+                                            </p>
+                                          </div>
                                         </div>
-                                        <div className="min-w-0 flex-1">
-                                          <p className="text-sm font-medium text-white truncate">
-                                            {value[0].name}
-                                          </p>
-                                          <p className="text-xs text-slate-300">
-                                            {(value[0].size / 1024).toFixed(1)} KB
-                                          </p>
-                                        </div>
+                                        <button
+                                          type="button"
+                                          onClick={(e) => {
+                                            e.preventDefault();
+                                            onChange(null);
+                                            setFilePreview(null);
+                                            const input =
+                                              document.getElementById(
+                                                "file-upload"
+                                              ) as HTMLInputElement;
+                                            if (input) input.value = "";
+                                          }}
+                                          className="flex-shrink-0 p-2 bg-red-500/90 hover:bg-red-500 backdrop-blur-sm rounded-lg transition-all duration-200 border border-red-400/30 hover:border-red-400/50 group/btn hover:scale-105 active:scale-95"
+                                          title="Eliminar archivo"
+                                        >
+                                          <X
+                                            className="w-4 h-4 text-white"
+                                            strokeWidth={2.5}
+                                          />
+                                        </button>
                                       </div>
-                                      <button
-                                        type="button"
-                                        onClick={(e) => {
-                                          e.preventDefault();
-                                          onChange(null);
-                                          setFilePreview(null);
-                                          const input = document.getElementById("file-upload") as HTMLInputElement;
-                                          if (input) input.value = "";
-                                        }}
-                                        className="flex-shrink-0 p-2 bg-red-500/90 hover:bg-red-500 backdrop-blur-sm rounded-lg transition-all duration-200 border border-red-400/30 hover:border-red-400/50 group/btn hover:scale-105 active:scale-95"
-                                        title="Eliminar archivo"
-                                      >
-                                        <X className="w-4 h-4 text-white" strokeWidth={2.5} />
-                                      </button>
                                     </div>
                                   </div>
-                                </div>
-                              )}
-                              
+                                )}
+
                               {/* Vista previa de PDF */}
-                              {value[0].type === 'application/pdf' && (
+                              {value[0].type === "application/pdf" && (
                                 <div className="relative w-full p-4 rounded-2xl bg-gradient-to-br from-slate-800/60 via-slate-800/40 to-slate-900/60 border-2 border-emerald-500/30 backdrop-blur-sm">
                                   <div className="flex items-start gap-3">
                                     <div className="flex-shrink-0">
                                       <div className="relative">
                                         <div className="absolute inset-0 bg-red-500/20 blur-lg rounded-xl"></div>
                                         <div className="relative p-3 bg-gradient-to-br from-red-500/20 to-red-600/10 rounded-xl border border-red-500/30">
-                                          <FileText className="w-8 h-8 text-red-400" strokeWidth={2} />
+                                          <FileText
+                                            className="w-8 h-8 text-red-400"
+                                            strokeWidth={2}
+                                          />
                                         </div>
                                       </div>
                                     </div>
-                                    
+
                                     <div className="flex-1 min-w-0 space-y-2">
                                       <div className="flex items-start justify-between gap-2">
                                         <div className="min-w-0 flex-1">
@@ -543,31 +642,43 @@ export function BottomNav() {
                                               {value[0].name}
                                             </p>
                                             <div className="flex-shrink-0 flex items-center gap-1 px-2 py-0.5 bg-emerald-500/20 rounded-full border border-emerald-500/30">
-                                              <Check className="w-3 h-3 text-emerald-400" strokeWidth={3} />
-                                              <span className="text-xs font-medium text-emerald-400">PDF</span>
+                                              <Check
+                                                className="w-3 h-3 text-emerald-400"
+                                                strokeWidth={3}
+                                              />
+                                              <span className="text-xs font-medium text-emerald-400">
+                                                PDF
+                                              </span>
                                             </div>
                                           </div>
                                           <p className="text-xs text-slate-400">
-                                            {(value[0].size / 1024).toFixed(1)} KB • Documento PDF
+                                            {(value[0].size / 1024).toFixed(1)}{" "}
+                                            KB • Documento PDF
                                           </p>
                                         </div>
-                                        
+
                                         <button
                                           type="button"
                                           onClick={(e) => {
                                             e.preventDefault();
                                             onChange(null);
                                             setFilePreview(null);
-                                            const input = document.getElementById("file-upload") as HTMLInputElement;
+                                            const input =
+                                              document.getElementById(
+                                                "file-upload"
+                                              ) as HTMLInputElement;
                                             if (input) input.value = "";
                                           }}
                                           className="flex-shrink-0 p-2 bg-red-500/20 hover:bg-red-500/40 rounded-lg transition-all duration-200 border border-red-500/30 hover:border-red-500/50 group/btn hover:scale-105 active:scale-95"
                                           title="Eliminar archivo"
                                         >
-                                          <X className="w-4 h-4 text-red-400 group-hover/btn:text-red-300" strokeWidth={2.5} />
+                                          <X
+                                            className="w-4 h-4 text-red-400 group-hover/btn:text-red-300"
+                                            strokeWidth={2.5}
+                                          />
                                         </button>
                                       </div>
-                                      
+
                                       {/* Barra de progreso visual */}
                                       <div className="h-1 bg-slate-700/50 rounded-full overflow-hidden">
                                         <div className="h-full w-full bg-gradient-to-r from-emerald-500 to-emerald-400 animate-pulse"></div>
