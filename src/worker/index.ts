@@ -78,7 +78,7 @@ const authMiddleware = createMiddleware<AppContext>(async (c, next) => {
     }
 
 
-    const secret = String(c.env.JWT_SECRET);
+    const secret = await c.env.JWT_SECRET.get();
     const payload = await verify(token, secret);
 
     console.log("✅ authMiddleware: Token verificado, payload:", payload);
