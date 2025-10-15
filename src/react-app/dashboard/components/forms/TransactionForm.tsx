@@ -21,7 +21,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { useFormOptions } from "@/dashboard/hooks/useFormOptions";
-import { useTransactionExpense } from "@/dashboard/hooks/useTransactions";
+import { useTransaction } from "@/dashboard/hooks/useTransactions";
 import {
   TransactionSchema,
   TransactionSchemaFormData,
@@ -35,7 +35,6 @@ interface TransactionFormProps {
 }
 
 export function TransactionForm({ handleClose, type }: TransactionFormProps) {
-  console.log(type);
   const form = useForm<TransactionSchemaFormData>({
     resolver: zodResolver(TransactionSchema),
     defaultValues: defaultTransactionValues,
@@ -43,15 +42,12 @@ export function TransactionForm({ handleClose, type }: TransactionFormProps) {
 
   const { categories, subcategories, accounts } = useFormOptions();
 
-  const { mutate, isPending } = useTransactionExpense();
+  const { mutate, isPending } = useTransaction();
 
-  // Filtrar categorías por tipo
   const filteredCategories = categories.filter((cat) => cat.type === type);
 
-  // Obtener la categoría seleccionada actualmente
   const selectedCategoryId = form.watch("categoryId");
 
-  // Filtrar subcategorías según la categoría seleccionada
   const filteredSubcategories = selectedCategoryId
     ? subcategories.filter(
         (sub) => sub.category_id === parseInt(selectedCategoryId)

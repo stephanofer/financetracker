@@ -2,7 +2,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { ApiResponseTransaction } from "@/dashboard/types";
 import { toast } from "sonner";
 
-export function useTransactionExpense() {
+export function useTransaction() {
   const queryClient = useQueryClient();
 
   return useMutation<ApiResponseTransaction, Error, FormData>({

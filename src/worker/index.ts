@@ -527,6 +527,72 @@ app.get("/api/transactions/expenses", async (c) => {
 });
 
 /**
+ * GET /api/transactions/:id
+ * Obtiene los detalles completos de una transacción específica con sus adjuntos
+ */
+app.get("/api/transactions/:id", async (c) => {
+  try {
+    const transactionId = c.req.param("id");
+
+    // Obtener datos de la transacción con joins para category, subcategory y account
+    const transactionStmt = c.env.DB.prepare(
+      `SELECT 
+        t.*,
+        c.name as category_name,
+        c.icon as category_icon,
+        c.color as category_color,
+        sc.name as subcategory_name,
+        a.name as account_name,
+        a.type as account_type
+      FROM transactions t
+      LEFT JOIN categories c ON t.category_id = c.id
+      LEFT JOIN subcategories sc ON t.subcategory_id = sc.id
+      LEFT JOIN accounts a ON t.account_id = a.id
+      WHERE t.id = ?`
+    );
+
+    const transaction = await transactionStmt.bind(transactionId).first();
+
+    if (!transaction) {
+      return c.json(
+        {
+          success: false,
+          error: "Transacción no encontrada",
+        },
+        404
+      );
+    }
+
+    // Obtener los archivos adjuntos de esta transacción
+    const attachmentsStmt = c.env.DB.prepare(
+      `SELECT * FROM attachments WHERE transaction_id = ? ORDER BY uploaded_at DESC`
+    );
+
+    const { results: attachments } = await attachmentsStmt.bind(transactionId).all();
+
+    // Agregar attachments a la transacción
+    const transactionWithAttachments = {
+      ...transaction,
+      attachments: attachments,
+    };
+
+    return c.json({
+      success: true,
+      data: transactionWithAttachments,
+    });
+  } catch (error) {
+    console.error("Error al obtener detalles de la transacción:", error);
+    return c.json(
+      {
+        success: false,
+        error: "Error al obtener los detalles de la transacción",
+      },
+      500
+    );
+  }
+});
+
+/**
  * GET /api/transactions/:id/attachments
  * Obtiene todos los archivos adjuntos de una transacción
  */
