@@ -26,8 +26,8 @@ import {
   TransactionSchema,
   TransactionSchemaFormData,
   defaultTransactionValues,
-} from "../../schems/Transaction";
-import { FileUpload } from "../FileUpload";
+} from "@/dashboard/schems/Transaction";
+import { FileUpload } from "@/dashboard/components/FileUpload";
 
 interface TransactionFormProps {
   handleClose: () => void;
@@ -44,6 +44,19 @@ export function TransactionForm({ handleClose, type }: TransactionFormProps) {
   const { categories, subcategories, accounts } = useFormOptions();
 
   const { mutate, isPending } = useTransactionExpense();
+
+  // Filtrar categorías por tipo
+  const filteredCategories = categories.filter((cat) => cat.type === type);
+
+  // Obtener la categoría seleccionada actualmente
+  const selectedCategoryId = form.watch("categoryId");
+
+  // Filtrar subcategorías según la categoría seleccionada
+  const filteredSubcategories = selectedCategoryId
+    ? subcategories.filter(
+        (sub) => sub.category_id === parseInt(selectedCategoryId)
+      )
+    : [];
 
   function handleSubmit(data: TransactionSchemaFormData) {
     if (data.file && data.file[0]) {
@@ -131,13 +144,17 @@ export function TransactionForm({ handleClose, type }: TransactionFormProps) {
                 <Select
                   name={field.name}
                   value={field.value}
-                  onValueChange={field.onChange}
+                  onValueChange={(value) => {
+                    field.onChange(value);
+                    // Resetear subcategoría cuando cambie la categoría
+                    form.setValue("subcategoryId", "");
+                  }}
                 >
                   <SelectTrigger id="category" className="w-full">
                     <SelectValue placeholder="Seleccionar Categoría" />
                   </SelectTrigger>
                   <SelectContent>
-                    {categories.map((cat) => (
+                    {filteredCategories.map((cat) => (
                       <SelectItem key={cat.id} value={cat.id.toString()}>
                         {cat.name}
                       </SelectItem>
@@ -161,12 +178,23 @@ export function TransactionForm({ handleClose, type }: TransactionFormProps) {
                   name={field.name}
                   value={field.value}
                   onValueChange={field.onChange}
+                  disabled={
+                    !selectedCategoryId || filteredSubcategories.length === 0
+                  }
                 >
                   <SelectTrigger id="subcategory" className="w-full">
-                    <SelectValue placeholder="Seleccionar Subcategoría" />
+                    <SelectValue
+                      placeholder={
+                        !selectedCategoryId
+                          ? "Primero selecciona una categoría"
+                          : filteredSubcategories.length === 0
+                          ? "No hay subcategorías disponibles"
+                          : "Seleccionar Subcategoría"
+                      }
+                    />
                   </SelectTrigger>
                   <SelectContent>
-                    {subcategories.map((cat) => (
+                    {filteredSubcategories.map((cat) => (
                       <SelectItem key={cat.id} value={cat.id.toString()}>
                         {cat.name}
                       </SelectItem>
