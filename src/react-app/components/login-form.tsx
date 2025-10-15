@@ -55,9 +55,7 @@ export function LoginForm({
           </form>
         </CardContent>
       </Card>
-      <Link to="/dashboard" >
-      Dashboard
-      </Link>
+      <Link to="/dashboard">Dashboard</Link>
     </div>
   );
 }

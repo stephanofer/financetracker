@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { ApiResponseTransaction } from "../types";
+import { ApiResponseTransaction } from "@/dashboard/types";
 import { toast } from "sonner";
 
 export function useTransactionExpense() {
@@ -52,8 +52,7 @@ export function useTransactionExpense() {
       return response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ refetchType: 'all' });
-
+      queryClient.invalidateQueries({ refetchType: "all" });
     },
     onError: (error) => {
       // Mostrar notificación de error

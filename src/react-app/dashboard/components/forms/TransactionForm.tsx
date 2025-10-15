@@ -20,8 +20,8 @@ import { Spinner } from "@/components/ui/spinner";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
-import { useFormOptions } from "../../hooks/useFormOptions";
-import { useTransactionExpense } from "../../hooks/useTransactions";
+import { useFormOptions } from "@/dashboard/hooks/useFormOptions";
+import { useTransactionExpense } from "@/dashboard/hooks/useTransactions";
 import {
   TransactionSchema,
   TransactionSchemaFormData,
@@ -35,7 +35,6 @@ interface TransactionFormProps {
 }
 
 export function TransactionForm({ handleClose, type }: TransactionFormProps) {
-
   console.log(type);
   const form = useForm<TransactionSchemaFormData>({
     resolver: zodResolver(TransactionSchema),
@@ -84,7 +83,9 @@ export function TransactionForm({ handleClose, type }: TransactionFormProps) {
     mutate(formData, {
       onSuccess: () => {
         toast.success("¡Transacción registrada!", {
-          description: `${type === "expense" ? "Gasto" : "Ingreso"} registrado con éxito.`,
+          description: `${
+            type === "expense" ? "Gasto" : "Ingreso"
+          } registrado con éxito.`,
           duration: 4000,
         });
         toast.dismiss(loadingToast);
@@ -253,8 +254,10 @@ export function TransactionForm({ handleClose, type }: TransactionFormProps) {
               <Spinner className="size-4" />
               Registrando Gasto...
             </span>
+          ) : type === "expense" ? (
+            "Registrar Gasto"
           ) : (
-            type === "expense" ? "Registrar Gasto" : "Registrar Ingreso"
+            "Registrar Ingreso"
           )}
         </Button>
       </form>

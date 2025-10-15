@@ -10,10 +10,10 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
-import { ActionType } from "@/react-app/dashboard/types";
+import { ActionType } from "@/dashboard/types";
 import { Home, Layers, Plus, Repeat, Search, User } from "lucide-react";
 import { useState } from "react";
-import { TransactionForm } from "./forms/TransactionForm";
+import { TransactionForm } from "@/dashboard/components/forms/TransactionForm";
 
 export function BottomNav() {
   const [showQuickActions, setShowQuickActions] = useState(false);
