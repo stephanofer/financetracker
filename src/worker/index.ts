@@ -1,7 +1,26 @@
 import { Hono } from "hono";
+import { createMiddleware } from "hono/factory";
+import { sign, verify } from "hono/jwt";
+import type { JwtVariables } from "hono/jwt";
+import { setCookie, getCookie } from "hono/cookie";
 import { Category, Account, Subcategory } from "@/react-app/dashboard/types";
 
-const app = new Hono<{ Bindings: Env }>();
+// Tipos para las variables de contexto
+type Variables = JwtVariables & {
+  user: {
+    id: number;
+    username: string;
+    email: string | null;
+    full_name: string | null;
+  };
+};
+
+type AppContext = {
+  Bindings: Env;
+  Variables: Variables;
+};
+
+const app = new Hono<AppContext>();
 
 const ALLOWED_FILE_TYPES = [
   "image/jpeg",
@@ -12,6 +31,271 @@ const ALLOWED_FILE_TYPES = [
 ];
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB en bytes
+
+// Configuración JWT
+const JWT_EXPIRATION = 90 * 24 * 60 * 60; // 90 días en segundos
+const COOKIE_MAX_AGE = 90 * 24 * 60 * 60; // 90 días en segundos
+
+/**
+ * Hashea una contraseña usando SHA-256
+ * En producción, considera usar bcrypt o argon2 desde un servicio externo
+ */
+async function hashPassword(password: string): Promise<string> {
+  const encoder = new TextEncoder();
+  const data = encoder.encode(password);
+  const hashBuffer = await crypto.subtle.digest("SHA-256", data);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map((b) => b.toString(16).padStart(2, "0")).join("");
+}
+
+/**
+ * Verifica si una contraseña coincide con su hash
+ */
+async function verifyPassword(
+  password: string,
+  hash: string
+): Promise<boolean> {
+  const passwordHash = await hashPassword(password);
+  return passwordHash === hash;
+}
+
+const authMiddleware = createMiddleware<AppContext>(async (c, next) => {
+  try {
+    const token = getCookie(c, "auth_token");
+
+    console.log("🔐 authMiddleware: Verificando token...");
+
+    if (!token) {
+      console.log("❌ authMiddleware: No se encontró token");
+      return c.json(
+        {
+          success: false,
+          error: "No autenticado",
+          message: "Debes iniciar sesión para acceder a este recurso",
+        },
+        401
+      );
+    }
+
+
+    const secret = String(c.env.JWT_SECRET);
+    const payload = await verify(token, secret);
+
+    console.log("✅ authMiddleware: Token verificado, payload:", payload);
+
+    if (!payload || !payload.sub) {
+      console.log("❌ authMiddleware: Payload inválido");
+      return c.json(
+        {
+          success: false,
+          error: "Token inválido",
+        },
+        401
+      );
+    }
+
+    const userStmt = c.env.DB.prepare(
+      "SELECT id, username, email, full_name FROM users WHERE id = ? AND is_active = 1"
+    );
+    const user = await userStmt.bind(payload.sub).first<{
+      id: number;
+      username: string;
+      email: string | null;
+      full_name: string | null;
+    }>();
+
+    if (!user) {
+      console.log("❌ authMiddleware: Usuario no encontrado o inactivo");
+      return c.json(
+        {
+          success: false,
+          error: "Usuario no encontrado o inactivo",
+        },
+        401
+      );
+    }
+
+    console.log("✅ authMiddleware: Usuario cargado:", user);
+
+    c.set("user", {
+      id: user.id,
+      username: user.username,
+      email: user.email,
+      full_name: user.full_name,
+    });
+
+    await next();
+  } catch {
+    return c.json(
+      {
+        success: false,
+        error: "No autenticado",
+        message: "Debes iniciar sesión para acceder a este recurso",
+      },
+      401
+    );
+  }
+});
+
+app.use("/api/*", async (c, next) => {
+  const path = c.req.path;
+
+  if (path === "/api/login" || path === "/api/logout") {
+    return next();
+  }
+
+  return authMiddleware(c, next);
+});
+
+app.post("/api/login", async (c) => {
+  try {
+    const body = await c.req.json();
+    const { username, password } = body;
+
+    if (!username || !password) {
+      return c.json(
+        {
+          success: false,
+          error: "Username y password son requeridos",
+        },
+        400
+      );
+    }
+
+    const userStmt = c.env.DB.prepare(
+      "SELECT id, username, password_hash, email, full_name, is_active FROM users WHERE username = ?"
+    );
+
+    const user = await userStmt.bind(username).first<{
+      id: number;
+      username: string;
+      password_hash: string;
+      email: string | null;
+      full_name: string | null;
+      is_active: number;
+    }>();
+
+    if (!user) {
+      return c.json(
+        {
+          success: false,
+          error: "Credenciales inválidas",
+        },
+        401
+      );
+    }
+
+    if (!user.is_active) {
+      return c.json(
+        {
+          success: false,
+          error: "Usuario inactivo. Contacta al administrador.",
+        },
+        403
+      );
+    }
+
+    const isPasswordValid = await verifyPassword(password, user.password_hash);
+
+    if (!isPasswordValid) {
+      return c.json(
+        {
+          success: false,
+          error: "Credenciales inválidas",
+        },
+        401
+      );
+    }
+
+    const updateLoginStmt = c.env.DB.prepare(
+      "UPDATE users SET last_login = CURRENT_TIMESTAMP WHERE id = ?"
+    );
+    await updateLoginStmt.bind(user.id).run();
+
+    const payload = {
+      sub: user.id, // Subject (user ID)
+      username: user.username,
+      email: user.email,
+      exp: Math.floor(Date.now() / 1000) + JWT_EXPIRATION, // Expiración de 90 días
+      iat: Math.floor(Date.now() / 1000),
+    };
+
+    // Asegurar que JWT_SECRET es un string
+    const secret = await c.env.JWT_SECRET.get() ;
+    console.log(secret);
+    const token = await sign(payload, secret);
+
+    // Establecer cookie httpOnly para mayor seguridad
+    // En desarrollo local (localhost), secure debe ser false porque usa HTTP
+    setCookie(c, "auth_token", token, {
+      httpOnly: true,
+      secure: false, // false para desarrollo local
+      sameSite: "Lax",
+      maxAge: COOKIE_MAX_AGE,
+      path: "/",
+    });
+
+    console.log("🔐 Login exitoso para:", user.username);
+    console.log(
+      "🍪 Cookie configurada con httpOnly, secure: false para desarrollo"
+    );
+
+    return c.json({
+      success: true,
+      message: "Login exitoso",
+      data: {
+        user: {
+          id: user.id,
+          username: user.username,
+          email: user.email,
+          full_name: user.full_name,
+        },
+      },
+    });
+  } catch (error) {
+    console.error("Error en login:", error);
+    return c.json(
+      {
+        success: false,
+        error: "Error al iniciar sesión",
+      },
+      500
+    );
+  }
+});
+
+/**
+ * POST /api/logout
+ * Cierra la sesión del usuario
+ */
+app.post("/api/logout", (c) => {
+  // Eliminar cookie
+  setCookie(c, "auth_token", "", {
+    httpOnly: true,
+    secure: true,
+    sameSite: "Lax",
+    maxAge: 0,
+    path: "/",
+  });
+
+  return c.json({
+    success: true,
+    message: "Logout exitoso",
+  });
+});
+
+/**
+ * GET /api/me
+ * Obtiene información del usuario autenticado
+ */
+app.get("/api/me", authMiddleware, (c) => {
+  const user = c.get("user");
+
+  return c.json({
+    success: true,
+    data: user,
+  });
+});
 
 /**
  * Actualiza el balance de una cuenta según el tipo de transacción
@@ -27,14 +311,14 @@ async function updateAccountBalance(
   type: string
 ) {
   const operation = type === "income" ? "+" : "-";
-  
+
   const stmt = db.prepare(
     `UPDATE accounts 
      SET balance = balance ${operation} ?, 
          updated_at = CURRENT_TIMESTAMP 
      WHERE id = ?`
   );
-  
+
   await stmt.bind(amount, accountId).run();
 }
 
@@ -417,7 +701,7 @@ app.get("/api/accounts/balance/total", async (c) => {
 /**
  * GET /api/transactions/expenses
  * Obtiene todos los gastos de un usuario con información detallada
- * Query params: 
+ * Query params:
  *   - userId (required): number
  *   - limit (optional): number - cantidad de registros a devolver
  *   - offset (optional): number - para paginación
@@ -568,7 +852,9 @@ app.get("/api/transactions/:id", async (c) => {
       `SELECT * FROM attachments WHERE transaction_id = ? ORDER BY uploaded_at DESC`
     );
 
-    const { results: attachments } = await attachmentsStmt.bind(transactionId).all();
+    const { results: attachments } = await attachmentsStmt
+      .bind(transactionId)
+      .all();
 
     // Agregar attachments a la transacción
     const transactionWithAttachments = {

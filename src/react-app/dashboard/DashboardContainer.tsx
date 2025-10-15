@@ -1,5 +1,5 @@
 import { Bell, ArrowUpRight, ArrowDownRight, Check } from "lucide-react";
-import { useNavigate } from "react-router";
+import { useNavigate, useLoaderData } from "react-router";
 import { BottomNav } from "./components/BottomNav";
 import { Greeting } from "./components/Greeting";
 import {
@@ -9,10 +9,29 @@ import {
 } from "./hooks/useMainDetails";
 import { Spinner } from "@/components/ui/spinner";
 
+interface LoaderData {
+  id: number;
+  username: string;
+  email: string | null;
+  full_name: string | null;
+}
+
 export function DashboardContainer() {
+  // const { user: userasd } = useLoaderData();
+
   const navigate = useNavigate();
-  // TODO: Reemplazar con el userId real del usuario autenticado
-  const userId = 1;
+
+  // Obtener usuario autenticado desde el loader
+  const user = useLoaderData() as LoaderData | undefined;
+
+  // Fallback por si el loader no retorna datos (no debería pasar, pero por seguridad)
+  if (!user) {
+    // Redirigir al login si no hay usuario
+    navigate("/", { replace: true });
+    return null;
+  }
+
+  const userId = user.id;
 
   // Obtener balance total
   const { data: balanceData, isLoading: isLoadingBalance } =
@@ -69,7 +88,7 @@ export function DashboardContainer() {
         <div className="flex items-start justify-between mb-2">
           <div>
             <h1 className="text-base font-semibold mb-1">
-              Hi, Welcome Back Stephano F.
+              Hi, Welcome Back {user.full_name || user.username}
             </h1>
             <Greeting />
           </div>
