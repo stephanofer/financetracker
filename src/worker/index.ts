@@ -229,7 +229,7 @@ app.post("/api/login", async (c) => {
     // En desarrollo local (localhost), secure debe ser false porque usa HTTP
     setCookie(c, "auth_token", token, {
       httpOnly: true,
-      secure: false, // false para desarrollo local
+      secure: true, // false para desarrollo local
       sameSite: "Lax",
       maxAge: COOKIE_MAX_AGE,
       path: "/",
