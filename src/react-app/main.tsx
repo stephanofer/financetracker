@@ -8,9 +8,9 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { createBrowserRouter, RouterProvider } from "react-router";
-import { userContext } from "./contexts/auth";
-import { authMiddleware } from "./middleware/auth";
-import { loggingMiddleware } from "./middleware/login";
+import { userContext } from "@/contexts/auth";
+import { authMiddleware } from "@/middleware/auth";
+import { loggingMiddleware } from "@/middleware/login";
 
 const router = createBrowserRouter([
   {
@@ -23,6 +23,7 @@ const router = createBrowserRouter([
     middleware: [authMiddleware],
     Component: DashboardContainer,
     loader: async function dashboardLoader({ context }) {
+      console.log("loader");
       const user = context.get(userContext);
       return { user };
     },

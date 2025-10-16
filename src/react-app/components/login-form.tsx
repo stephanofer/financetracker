@@ -36,15 +36,10 @@ export function LoginForm() {
   });
 
   const handleSubmit = async (data: LoginFormData) => {
-    console.log("🔐 Iniciando login con:", data);
 
     login(data, {
       onSuccess: () => {
-        console.log("✅ Login exitoso, redirigiendo al dashboard...");
         navigate("/dashboard");
-      },
-      onError: (error) => {
-        console.error("❌ Error durante el login:", error);
       },
     });
   };

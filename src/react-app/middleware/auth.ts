@@ -1,23 +1,21 @@
-import { redirect } from "react-router";
+import { MiddlewareFunction, redirect } from "react-router";
 import { userContext } from "@/contexts/auth";
 
-// @ts-ignore
-export async function authMiddleware({ context }) {
+export const authMiddleware: MiddlewareFunction = async ({ context }, next) => {
   const response = await fetch("/api/me", {
     credentials: "include",
   });
-  console.log("data");
 
   if (!response.ok) {
     throw redirect("/");
   }
-  console.log("data");
+
   const { data } = await response.json();
-  console.log(data);
 
   if (!data) {
-    throw redirect("/login");
+    throw redirect("/");
   }
 
   context.set(userContext, data);
-}
+  return next();
+};

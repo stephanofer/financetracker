@@ -1,13 +1,16 @@
-import { redirect } from "react-router";
+import { MiddlewareFunction, redirect } from "react-router";
 
-// @ts-ignore
-export async function loggingMiddleware({ request }, next) {
+export const loggingMiddleware: MiddlewareFunction = async (_context, next) => {
   const response = await fetch("/api/me", {
     credentials: "include",
   });
 
-  console.log("me quedo");
   if (response.ok) {
-    throw redirect("/dashboard");
+    const { data } = await response.json();
+    if (data) {
+      throw redirect("/dashboard");
+    }
   }
-}
+
+  return next();
+};

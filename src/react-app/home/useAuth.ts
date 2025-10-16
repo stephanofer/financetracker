@@ -15,8 +15,6 @@ interface LoginResponse {
 }
 
 async function loginUser(credentials: LoginFormData): Promise<LoginResponse> {
-  console.log("📡 Enviando petición a /api/login...");
-
   const response = await fetch("/api/login", {
     method: "POST",
     headers: {
@@ -26,10 +24,7 @@ async function loginUser(credentials: LoginFormData): Promise<LoginResponse> {
     credentials: "include",
   });
 
-  console.log("📡 Respuesta recibida:", response.status, response.statusText);
-
   const data = await response.json();
-  console.log("📦 Datos recibidos:", data);
 
   if (!response.ok) {
     throw new Error(data.error || "Error al iniciar sesión");
@@ -49,22 +44,19 @@ export function useLogin() {
   });
 }
 
-
-export function useProfile(){
+export function useProfile() {
   return useQuery({
-    queryKey: ['user'],
+    queryKey: ["user"],
     queryFn: async () => {
-      const response = await fetch('/api/me', {
-        credentials: 'include',
+      const response = await fetch("/api/me", {
+        credentials: "include",
       });
 
-      console.log("LLAMANDO PROFILE");
       if (!response.ok) {
-        throw new Error('Error fetching user profile');
+        throw new Error("Error fetching user profile");
       }
       const data = await response.json();
-      console.log(data);
       return data.data;
     },
-  }); 
+  });
 }
