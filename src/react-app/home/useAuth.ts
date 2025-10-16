@@ -1,20 +1,10 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { LoginFormData } from "@/home/schems/LoginSchema";
+import { ApiResponse, User } from "@/dashboard/types";
 
-interface LoginResponse {
-  success: boolean;
-  message: string;
-  data: {
-    user: {
-      id: number;
-      username: string;
-      email: string | null;
-      full_name: string | null;
-    };
-  };
-}
-
-async function loginUser(credentials: LoginFormData): Promise<LoginResponse> {
+async function loginUser(
+  credentials: LoginFormData
+): Promise<ApiResponse<User>> {
   const response = await fetch("/api/login", {
     method: "POST",
     headers: {
@@ -47,7 +37,7 @@ export function useLogin() {
 export function useProfile() {
   return useQuery({
     queryKey: ["user"],
-    queryFn: async () => {
+    queryFn: async (): Promise<ApiResponse<User>> => {
       const response = await fetch("/api/me", {
         credentials: "include",
       });
@@ -55,8 +45,8 @@ export function useProfile() {
       if (!response.ok) {
         throw new Error("Error fetching user profile");
       }
-      const data = await response.json();
-      return data.data;
+      const data = (await response.json()) as ApiResponse<User>;
+      return data;
     },
   });
 }

@@ -1,35 +1,22 @@
 import { Bell, ArrowUpRight, ArrowDownRight, Check } from "lucide-react";
 import { useNavigate, useLoaderData } from "react-router";
-import { BottomNav } from "./components/BottomNav";
-import { Greeting } from "./components/Greeting";
+import { BottomNav } from "@/dashboard/components/BottomNav";
+import { Greeting } from "@/dashboard/components/Greeting";
 import {
   useTotalBalance,
   useExpensesTotal,
   useExpenses,
-} from "./hooks/useMainDetails";
+} from "@/dashboard/hooks/useMainDetails";
 import { Spinner } from "@/components/ui/spinner";
-
-interface LoaderData {
-  id: number;
-  username: string;
-  email: string | null;
-  full_name: string | null;
-}
+import { User } from "@/dashboard/types";
 
 export function DashboardContainer() {
-  // const { user: userasd } = useLoaderData();
-
   const navigate = useNavigate();
 
-  // Obtener usuario autenticado desde el loader
-  const user = useLoaderData() as LoaderData | undefined;
+  const user = useLoaderData() as User;
 
-  // Fallback por si el loader no retorna datos (no debería pasar, pero por seguridad)
-  if (!user) {
-    // Redirigir al login si no hay usuario
-    navigate("/", { replace: true });
-    return null;
-  }
+
+  // Obtener usuario autenticado desde el loader
 
   const userId = user.id;
 

@@ -25,7 +25,7 @@ const router = createBrowserRouter([
     loader: async function dashboardLoader({ context }) {
       console.log("loader");
       const user = context.get(userContext);
-      return { user };
+      return user;
     },
 
     children: [

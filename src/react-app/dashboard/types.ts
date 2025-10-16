@@ -82,6 +82,7 @@ export interface TransactionInput {
 export interface ApiResponse<T> {
   success: boolean;
   data: T;
+  count?: number;
 }
 
 export interface ApiResponseTransaction {
@@ -91,4 +92,12 @@ export interface ApiResponseTransaction {
     r2_key: string;
     r2_url: string;
   } | null;
+}
+
+
+export interface User{
+  id: number;
+  username: string;
+  email: string;
+  full_name: string;
 }

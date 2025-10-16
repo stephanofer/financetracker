@@ -63,10 +63,10 @@ const authMiddleware = createMiddleware<AppContext>(async (c, next) => {
   try {
     const token = getCookie(c, "auth_token");
 
-    console.log("🔐 authMiddleware: Verificando token...");
+    // console.log("🔐 authMiddleware: Verificando token...");
 
     if (!token) {
-      console.log("❌ authMiddleware: No se encontró token");
+      // console.log("❌ authMiddleware: No se encontró token");
       return c.json(
         {
           success: false,
@@ -77,11 +77,10 @@ const authMiddleware = createMiddleware<AppContext>(async (c, next) => {
       );
     }
 
-
     const secret = await c.env.JWT_SECRET.get();
     const payload = await verify(token, secret);
 
-    console.log("✅ authMiddleware: Token verificado, payload:", payload);
+    // console.log("✅ authMiddleware: Token verificado, payload:", payload);
 
     if (!payload || !payload.sub) {
       console.log("❌ authMiddleware: Payload inválido");
@@ -105,7 +104,7 @@ const authMiddleware = createMiddleware<AppContext>(async (c, next) => {
     }>();
 
     if (!user) {
-      console.log("❌ authMiddleware: Usuario no encontrado o inactivo");
+      // console.log("❌ authMiddleware: Usuario no encontrado o inactivo");
       return c.json(
         {
           success: false,
@@ -115,7 +114,7 @@ const authMiddleware = createMiddleware<AppContext>(async (c, next) => {
       );
     }
 
-    console.log("✅ authMiddleware: Usuario cargado:", user);
+    // console.log("✅ authMiddleware: Usuario cargado:", user);
 
     c.set("user", {
       id: user.id,
@@ -221,24 +220,24 @@ app.post("/api/login", async (c) => {
     };
 
     // Asegurar que JWT_SECRET es un string
-    const secret = await c.env.JWT_SECRET.get() ;
-    console.log(secret);
+    const secret = await c.env.JWT_SECRET.get();
+    // console.log(secret);
     const token = await sign(payload, secret);
 
     // Establecer cookie httpOnly para mayor seguridad
     // En desarrollo local (localhost), secure debe ser false porque usa HTTP
     setCookie(c, "auth_token", token, {
       httpOnly: true,
-      secure: true, // false para desarrollo local
+      secure: false, // false para desarrollo local
       sameSite: "Lax",
       maxAge: COOKIE_MAX_AGE,
       path: "/",
     });
 
-    console.log("🔐 Login exitoso para:", user.username);
-    console.log(
-      "🍪 Cookie configurada con httpOnly, secure: false para desarrollo"
-    );
+    // console.log("🔐 Login exitoso para:", user.username);
+    // console.log(
+    // "🍪 Cookie configurada con httpOnly, secure: false para desarrollo"
+    // );
 
     return c.json({
       success: true,
@@ -345,6 +344,20 @@ app.post("/api/transaction", async (c) => {
   const userId = body["userId"] ? parseInt(body["userId"] as string) : null;
   const date = body["date"] || new Date().toISOString();
   const file = body["file"] || null;
+
+  console.log("=== POST /api/transaction ===");
+  console.log("📊 Amount:", amount);
+  console.log("🏦 Account ID:", accountId);
+  console.log("📂 Category ID:", categoryId);
+  console.log("📋 Subcategory ID:", subcategoryId);
+  console.log("👤 User ID:", userId);
+  console.log("🔖 Type:", type);
+  console.log("📝 Description:", description);
+  console.log("📄 Notes:", notes);
+  console.log("📅 Date:", date);
+  console.log("📎 Has File:", !!file);
+  console.log("🗂️ File Type:", file instanceof File ? file.type : null);
+  console.log("============================");
 
   if (!amount || !accountId || !userId || !type) {
     return c.json(
@@ -464,10 +477,16 @@ app.post("/api/transaction", async (c) => {
     // Actualizar el balance de la cuenta
     await updateAccountBalance(c.env.DB, accountId, amount, type as string);
 
+    const getTransactionStmt = c.env.DB.prepare(
+      `SELECT * FROM transactions WHERE id = ?`
+    );
+    const transaction = await getTransactionStmt.bind(transactionId).first();
+
     return c.json({
       success: true,
-      id: transactionId,
-      attachment: uploadedFile ? { r2_key: r2Key, r2_url: r2Url } : null,
+      data: {
+        ...transaction,
+      },
     });
   } catch (error) {
     console.error("Error al insertar transacción:", error);
@@ -561,7 +580,15 @@ app.get("/api/subcategories", async (c) => {
  */
 app.get("/api/accounts", async (c) => {
   try {
-    const userId = c.req.query("userId");
+    const user = c.get("user");
+    const userId = user.id;
+
+
+    // console.log("=== GET /api/accounts ===");
+    // console.log("📊 User object:", JSON.stringify(user, null, 2));
+    // console.log("🔑 User ID:", userId);
+    // console.log("⏰ Timestamp:", new Date().toISOString());
+    // console.log("=========================");
 
     if (!userId) {
       return c.json(
@@ -602,51 +629,54 @@ app.get("/api/accounts", async (c) => {
  * Obtiene una cuenta específica por ID
  * Query params: userId (required): number - para validar permisos
  */
-app.get("/api/accounts/:id", async (c) => {
-  try {
-    const id = c.req.param("id");
-    const userId = c.req.query("userId");
+// app.get("/api/accounts/:id", async (c) => {
+//   try {
+//     const id = c.req.param("id");
+//     const userId = c.req.query("userId");
+//     console.log(userId);
+//     console.log(id);
 
-    if (!userId) {
-      return c.json(
-        {
-          success: false,
-          error: "El parámetro userId es requerido",
-        },
-        400
-      );
-    }
+//     if (!userId) {
+//       return c.json(
+//         {
+//           success: false,
+//           error: "El parámetro userId es requerido",
+//         },
+//         400
+//       );
+//     }
 
-    const stmt = c.env.DB.prepare(
-      "SELECT * FROM accounts WHERE id = ? AND user_id = ? AND is_active = 1"
-    );
-    const result = await stmt.bind(id, userId).first<Account>();
+//     const stmt = c.env.DB.prepare(
+//       "SELECT * FROM accounts WHERE id = ? AND user_id = ? AND is_active = 1"
+//     );
+//     const result = await stmt.bind(id, userId).first<Account>();
 
-    if (!result) {
-      return c.json(
-        {
-          success: false,
-          error: "Cuenta no encontrada",
-        },
-        404
-      );
-    }
+//     if (!result) {
+//       return c.json(
+//         {
+//           success: false,
+//           error: "Cuenta no encontrada",
+//         },
+//         404
+//       );
+//     }
+//     console.log(result);
 
-    return c.json({
-      success: true,
-      data: result,
-    });
-  } catch (error) {
-    console.error("Error al obtener cuenta:", error);
-    return c.json(
-      {
-        success: false,
-        error: "Error al obtener la cuenta",
-      },
-      500
-    );
-  }
-});
+//     return c.json({
+//       success: true,
+//       data: result,
+//     });
+//   } catch (error) {
+//     console.error("Error al obtener cuenta:", error);
+//     return c.json(
+//       {
+//         success: false,
+//         error: "Error al obtener la cuenta",
+//       },
+//       500
+//     );
+//   }
+// });
 
 /**
  * GET /api/accounts/balance/total
@@ -655,6 +685,7 @@ app.get("/api/accounts/:id", async (c) => {
  */
 app.get("/api/accounts/balance/total", async (c) => {
   try {
+    console.log("balance");
     const userId = c.req.query("userId");
 
     if (!userId) {

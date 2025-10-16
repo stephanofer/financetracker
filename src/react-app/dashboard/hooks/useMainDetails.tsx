@@ -62,6 +62,7 @@ export function useTotalBalance(userId: number, enabled: boolean = true) {
   return useQuery<TotalBalanceResponse, Error>({
     queryKey: ["totalBalance", userId],
     queryFn: async () => {
+      console.log(userId);
       const response = await fetch(
         `/api/accounts/balance/total?userId=${userId}`
       );

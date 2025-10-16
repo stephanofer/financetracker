@@ -1,5 +1,6 @@
 import { MiddlewareFunction, redirect } from "react-router";
 import { userContext } from "@/contexts/auth";
+import { ApiResponse, User } from "@/dashboard/types";
 
 export const authMiddleware: MiddlewareFunction = async ({ context }, next) => {
   const response = await fetch("/api/me", {
@@ -10,7 +11,7 @@ export const authMiddleware: MiddlewareFunction = async ({ context }, next) => {
     throw redirect("/");
   }
 
-  const { data } = await response.json();
+  const { data } = (await response.json()) as ApiResponse<User>;
 
   if (!data) {
     throw redirect("/");

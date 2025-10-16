@@ -3,9 +3,9 @@ import { Account, ApiResponse, Category, Subcategory } from "@/dashboard/types";
 import { toast } from "sonner";
 
 export function useFormOptions() {
-  const { data: categoryData } = useQuery<ApiResponse<Category[]>>({
+  const { data: categoryData } = useQuery({
     queryKey: ["categories"],
-    queryFn: async () => {
+    queryFn: async (): Promise<ApiResponse<Category[]>> => {
       const res = await fetch("/api/categories");
       if (!res.ok) {
         const errorMsg = "Error al cargar las categorías";
@@ -18,9 +18,9 @@ export function useFormOptions() {
     },
   });
 
-  const { data: subcategoryData } = useQuery<ApiResponse<Subcategory[]>>({
+  const { data: subcategoryData } = useQuery({
     queryKey: ["subcategories"],
-    queryFn: async () => {
+    queryFn: async (): Promise<ApiResponse<Subcategory[]>> => {
       const res = await fetch("/api/subcategories");
       if (!res.ok) {
         const errorMsg = "Error al cargar las subcategorías";
@@ -33,10 +33,13 @@ export function useFormOptions() {
     },
   });
 
-  const { data: accountData } = useQuery<ApiResponse<Account[]>>({
+  const { data: accountData } = useQuery({
     queryKey: ["accounts"],
-    queryFn: async () => {
-      const res = await fetch("/api/accounts?userId=1");
+    queryFn: async (): Promise<ApiResponse<Account[]>> => {
+      const res = await fetch("/api/accounts", {
+        credentials: "include",
+      });
+
       if (!res.ok) {
         const errorMsg = "Error al cargar las cuentas";
         toast.error("Error de conexión", {

@@ -1,3 +1,4 @@
+import { ApiResponse, User } from "@/dashboard/types";
 import { MiddlewareFunction, redirect } from "react-router";
 
 export const loggingMiddleware: MiddlewareFunction = async (_context, next) => {
@@ -6,7 +7,7 @@ export const loggingMiddleware: MiddlewareFunction = async (_context, next) => {
   });
 
   if (response.ok) {
-    const { data } = await response.json();
+    const { data } = (await response.json()) as ApiResponse<User>;
     if (data) {
       throw redirect("/dashboard");
     }
