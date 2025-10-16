@@ -328,6 +328,8 @@ async function updateAccountBalance(
 app.post("/api/transaction", async (c) => {
   const body = await c.req.parseBody();
 
+  const user = c.get("user");
+
   const amount = body["amount"] ? parseFloat(body["amount"] as string) : null;
   const categoryId = body["categoryId"]
     ? parseInt(body["categoryId"] as string)
@@ -341,7 +343,7 @@ app.post("/api/transaction", async (c) => {
   const description = body["description"] || null;
   const type = body["type"];
   const notes = body["notes"] || null;
-  const userId = body["userId"] ? parseInt(body["userId"] as string) : null;
+  const userId = user.id;
   const date = body["date"] || new Date().toISOString();
   const file = body["file"] || null;
 

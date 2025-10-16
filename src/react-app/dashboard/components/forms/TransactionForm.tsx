@@ -81,7 +81,6 @@ export function TransactionForm({ handleClose, type }: TransactionFormProps) {
       formData.append("subcategoryId", data.subcategoryId);
     }
 
-    formData.append("userId", "2");
 
     if (data.file) {
       formData.append("file", data.file[0]);
