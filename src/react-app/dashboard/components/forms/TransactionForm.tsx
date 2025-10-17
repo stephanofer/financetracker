@@ -46,7 +46,6 @@ export function TransactionForm({ handleClose, type }: TransactionFormProps) {
 
   const filteredCategories = categories.filter((cat) => cat.type === type);
   
-  console.log(accounts);
   const selectedCategoryId = form.watch("categoryId");
 
   const filteredSubcategories = selectedCategoryId
@@ -75,7 +74,6 @@ export function TransactionForm({ handleClose, type }: TransactionFormProps) {
     formData.append("date", new Date().toISOString());
     formData.append("accountId", data.accountId);
     formData.append("categoryId", data.categoryId);
-    console.log(data.categoryId);
 
     if (data.subcategoryId) {
       formData.append("subcategoryId", data.subcategoryId);

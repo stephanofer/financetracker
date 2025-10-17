@@ -585,7 +585,6 @@ app.get("/api/accounts", async (c) => {
     const user = c.get("user");
     const userId = user.id;
 
-
     // console.log("=== GET /api/accounts ===");
     // console.log("📊 User object:", JSON.stringify(user, null, 2));
     // console.log("🔑 User ID:", userId);
@@ -687,8 +686,8 @@ app.get("/api/accounts", async (c) => {
  */
 app.get("/api/accounts/balance/total", async (c) => {
   try {
-    console.log("balance");
-    const userId = c.req.query("userId");
+    const user = c.get("user");
+    const userId = user.id;
 
     if (!userId) {
       return c.json(
@@ -735,7 +734,6 @@ app.get("/api/accounts/balance/total", async (c) => {
  * GET /api/transactions/expenses
  * Obtiene todos los gastos de un usuario con información detallada
  * Query params:
- *   - userId (required): number
  *   - limit (optional): number - cantidad de registros a devolver
  *   - offset (optional): number - para paginación
  *   - startDate (optional): string - fecha inicio (ISO format)
@@ -743,21 +741,22 @@ app.get("/api/accounts/balance/total", async (c) => {
  */
 app.get("/api/transactions/expenses", async (c) => {
   try {
-    const userId = c.req.query("userId");
+    const user = c.get("user");
+    const userId = user.id;
     const limit = c.req.query("limit");
     const offset = c.req.query("offset") || "0";
     const startDate = c.req.query("startDate");
     const endDate = c.req.query("endDate");
 
-    if (!userId) {
-      return c.json(
-        {
-          success: false,
-          error: "El parámetro userId es requerido",
-        },
-        400
-      );
-    }
+
+    console.log("=== GET /api/transactions/expenses ===");
+    console.log("📊 Parámetros recibidos:");
+    console.log("  👤 User ID:", userId);
+    console.log("  📏 Limit:", limit || "sin límite");
+    console.log("  ⏭️  Offset:", offset);
+    console.log("  📅 Start Date:", startDate || "sin filtro");
+    console.log("  📅 End Date:", endDate || "sin filtro");
+    console.log("=====================================");
 
     let query = `
       SELECT 
@@ -807,7 +806,7 @@ app.get("/api/transactions/expenses", async (c) => {
        ${endDate ? "AND transaction_date <= ?" : ""}`
     );
 
-    const totalParams: string[] = [userId];
+    const totalParams: string[] = [userId.toString()];
     if (startDate) totalParams.push(startDate);
     if (endDate) totalParams.push(endDate);
 
@@ -818,18 +817,14 @@ app.get("/api/transactions/expenses", async (c) => {
 
     return c.json({
       success: true,
-      data: results,
-      count: results.length,
-      total: {
-        total_expenses: totalResult?.total_expenses || 0,
-        total_count: totalResult?.total_count || 0,
+      data: {
+        results,
+        total: {
+          total_expenses: totalResult?.total_expenses || 0,
+          total_count: totalResult?.total_count || 0,
+        },
       },
-      pagination: limit
-        ? {
-            limit: parseInt(limit),
-            offset: parseInt(offset),
-          }
-        : null,
+      count: results.length,
     });
   } catch (error) {
     console.error("Error al obtener gastos:", error);

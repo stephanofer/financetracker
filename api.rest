@@ -1,1 +1,42 @@
+POST http://localhost:5173/api/login
+Content-Type: application/json
+
+{
+    "username": "demo_user",
+    "password": "holamundo"
+}
+
+###
 GET http://localhost:5173/api/categories
+
+###
+POST http://localhost:5173/api/login
+Content-Type: application/json
+
+{
+    "username": "demo_user",
+    "password": "holamundo"
+}
+###
+POST http://localhost:5173/api/logout
+###
+
+
+GET http://localhost:5173/api/accounts
+
+###
+GET http://localhost:5173/api/accountsGET http://localhost:5173/api/accounts
+
+###
+GET http://localhost:5173/api/accounts/1?userId=2
+
+####
+GET http://localhost:5173/api/accounts/balance/total?userId=2
+
+####
+GET http://localhost:5173/api/transactions/expenses
+####
+GET http://localhost:5173/api/transactions/expenses?limit=1&offset=0
+
+
+###

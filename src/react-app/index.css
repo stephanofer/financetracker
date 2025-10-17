@@ -136,3 +136,9 @@
     @apply w-full h-full;
   }
 }
+
+@keyframes shimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}

@@ -2,36 +2,21 @@ import { ArrowLeft } from "lucide-react";
 import { useNavigate } from "react-router";
 import { useExpenses } from "@/dashboard/hooks/useMainDetails";
 import { Spinner } from "@/components/ui/spinner";
+import { formatCurrency, formatDate } from "@/dashboard/utils";
+import { Transaction } from "@/dashboard/types";
 
 export function TransactionsContainer() {
   const navigate = useNavigate();
-  const userId = 1;
+  // const userId = 1;
 
   const { data: expensesData, isLoading } = useExpenses({
-    userId,
     limit: 100,
     offset: 0,
   });
 
-  const expenses = expensesData?.data || [];
+  const transactions: Transaction[] = expensesData?.data.results || [];
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("es-PE", {
-      style: "currency",
-      currency: "PEN",
-      minimumFractionDigits: 2,
-    }).format(amount);
-  };
-
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString("en-US", {
-      month: "short",
-      day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-  };
+  console.log(transactions);
 
   return (
     <div className="flex flex-col h-full bg-[#093030]">
@@ -54,13 +39,13 @@ export function TransactionsContainer() {
           <div className="flex items-center justify-center py-8">
             <Spinner className="w-8 h-8 text-[#F1FFF3]" />
           </div>
-        ) : expenses.length === 0 ? (
+        ) : transactions.length === 0 ? (
           <div className="text-center py-8">
             <p className="text-[#F1FFF3]/60 text-sm">No transactions found</p>
           </div>
         ) : (
           <div className="flex flex-col gap-4 pb-6">
-            {expenses.map((expense) => (
+            {transactions.map((expense) => (
               <button
                 key={expense.id}
                 onClick={() =>
@@ -76,13 +61,13 @@ export function TransactionsContainer() {
                       : "rgba(59, 130, 246, 0.2)",
                   }}
                 >
-                  <span className="text-xl">
+                  <span className="text-2xl">
                     {expense.category_icon || "💰"}
                   </span>
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-[#F1FFF3] font-semibold text-sm truncate">
-                    {expense.description || expense.category_name || "Expense"}
+                  <p className="text-[#F1FFF3] font-semibold text-base truncate">
+                    {expense.category_name || "Expense"}
                   </p>
                   <div className="flex items-center gap-2 mt-1">
                     <p className="text-[#3299FF] text-xs font-medium">
@@ -99,8 +84,12 @@ export function TransactionsContainer() {
                   </div>
                 </div>
                 <div className="flex-shrink-0">
-                  <p className="text-[#FF6B6B] font-bold text-base whitespace-nowrap">
-                    -{formatCurrency(expense.amount)}
+                  <p className={`font-bold text-base whitespace-nowrap ${
+                    expense.type === 'income' 
+                      ? 'text-[#00D09E]' 
+                      : 'text-[#FF6B6B]'
+                  }`}>
+                    {expense.type === 'income' ? '' : '-'}{formatCurrency(expense.amount)}
                   </p>
                 </div>
               </button>

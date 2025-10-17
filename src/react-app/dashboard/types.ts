@@ -11,6 +11,12 @@ export interface Category {
   created_at: string;
 }
 
+// interface Pagination {
+//   limit: number;
+//   offset: number;
+//   total: number;
+// }
+
 export interface Subcategory {
   id: number;
   category_id: number;
@@ -64,7 +70,13 @@ export interface Transaction {
   updated_at: string;
   destination_account_id: number | null;
   debt_id: number | null;
-  attachments?: Attachment[]; // archivos adjuntos opcionales
+  category_name?: string;
+  category_icon?: string;
+  category_color?: string;
+  subcategory_name?: string;
+  account_name?: string;
+  account_type?: string;
+  attachments?: Attachment[];
 }
 
 export interface TransactionInput {
@@ -83,6 +95,7 @@ export interface ApiResponse<T> {
   success: boolean;
   data: T;
   count?: number;
+  // pagination?: Pagination;
 }
 
 export interface ApiResponseTransaction {
@@ -94,10 +107,22 @@ export interface ApiResponseTransaction {
   } | null;
 }
 
-
-export interface User{
+export interface User {
   id: number;
   username: string;
   email: string;
   full_name: string;
+}
+
+export interface TotalBalance {
+  total_balance: number;
+  total_accounts: number;
+}
+
+export interface Expenses {
+  results: Transaction[];
+  total: {
+    total_expenses: number;
+    total_count: number;
+  };
 }

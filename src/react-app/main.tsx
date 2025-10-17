@@ -23,7 +23,6 @@ const router = createBrowserRouter([
     middleware: [authMiddleware],
     Component: DashboardContainer,
     loader: async function dashboardLoader({ context }) {
-      console.log("loader");
       const user = context.get(userContext);
       return user;
     },

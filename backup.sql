@@ -36,7 +36,7 @@ CREATE TABLE users (
     auto_logout_minutes INTEGER DEFAULT 30
 );
 
-INSERT INTO "users" (username, password_hash, email, full_name, created_at, updated_at, last_login, is_active, auto_logout_minutes) VALUES('demo_user','holamundo','demo_user@example.com','Demo User','2025-10-07 04:32:48','2025-10-07 04:32:48',NULL,1,30);
+INSERT INTO "users" (username, password_hash, email, full_name, created_at, updated_at, last_login, is_active, auto_logout_minutes) VALUES('demo_user','93fa3e4624676f2e9aa143911118b4547087e9b6e0b6076f2e1027d7a2da2b0a','demo_user@example.com','Demo User','2025-10-07 04:32:48','2025-10-07 04:32:48',NULL,1,30);
 
 CREATE TABLE sessions (
     id TEXT PRIMARY KEY,

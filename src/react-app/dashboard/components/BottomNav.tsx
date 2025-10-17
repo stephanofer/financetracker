@@ -11,7 +11,7 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { ActionType } from "@/dashboard/types";
-import { Home, Layers, Plus, Repeat, Search, User } from "lucide-react";
+import { Home, Layers, Plus, Search, User, PlusIcon } from "lucide-react";
 import { useState } from "react";
 import { TransactionForm } from "@/dashboard/components/forms/TransactionForm";
 
@@ -50,7 +50,6 @@ export function BottomNav() {
           </SheetHeader>
 
           <div className="flex flex-col gap-2 px-3">
-            {/* Registrar Gasto */}
             <button
               onClick={() => handleActionClick("expense")}
               className="flex items-center gap-3 p-3.5 bg-gradient-to-r from-red-500/10 to-red-600/5 border border-red-500/20 rounded-xl hover:from-red-500/15 hover:to-red-600/10 hover:border-red-500/30 active:scale-[0.98] transition-all duration-200"
@@ -63,7 +62,6 @@ export function BottomNav() {
               </span>
             </button>
 
-            {/* Registrar Ingreso */}
             <button
               onClick={() => handleActionClick("income")}
               className="flex items-center gap-3 p-3.5 bg-gradient-to-r from-emerald-500/10 to-emerald-600/5 border border-emerald-500/20 rounded-xl hover:from-emerald-500/15 hover:to-emerald-600/10 hover:border-emerald-500/30 active:scale-[0.98] transition-all duration-200"
@@ -116,7 +114,7 @@ export function BottomNav() {
               showQuickActions ? "rotate-45" : ""
             }`}
           >
-            <Repeat
+            <PlusIcon
               size={28}
               className="text-[#0a2b2a] transition-transform duration-300"
               strokeWidth={2}
