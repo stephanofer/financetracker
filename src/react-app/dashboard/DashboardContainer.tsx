@@ -17,7 +17,7 @@ export function DashboardContainer() {
   const { data: balanceData, isPending: isLoadingBalance } = useTotalBalance();
 
   const { data: expensesData, isPending: isLoadingExpenses } = useExpenses({
-    limit: 2,
+    limit: 10,
   });
 
   const recentExpenses = expensesData?.data.results || [];
@@ -85,100 +85,101 @@ export function DashboardContainer() {
         </p>
       </div>
 
-      <div className="bg-[#093030] space-y-4 border rounded-t-[50px] flex-1 overflow-hidden flex flex-col">
-        
+      <div className="bg-[#093030] border rounded-t-[50px] flex-1 overflow-y-auto pb-[80px]">
+        <div className="space-y-4">
           {/* Savings Card */}
-        <div className="px-6 pb-6 pt-4 m-0">
-          <SavingsCard 
-            savingsPercentage={35}
-            revenueLastWeek={4000}
-            foodLastWeek={100}
-          />
-        </div>
-      
-        {isLoadingExpenses ? (
-          <div className="px-4 pt-4 flex flex-col gap-4">
-            {[...Array(5)].map((_, i) => (
-              <div key={i} className="flex items-center gap-3 p-2">
-                <Skeleton className="h-14 w-14 rounded-xl bg-white/5 flex-shrink-0" />
-                <div className="flex-1 space-y-2.5">
-                  <Skeleton className="h-4 w-3/4 bg-white/5 rounded-lg" />
-                  <Skeleton className="h-3 w-1/2 bg-white/5 rounded-lg" />
+          <div className="px-6 pb-6 pt-4 m-0">
+            <SavingsCard 
+              savingsPercentage={35}
+              revenueLastWeek={4000}
+              foodLastWeek={100}
+            />
+          </div>
+        
+          {isLoadingExpenses ? (
+            <div className="px-4 pt-4 flex flex-col gap-4">
+              {[...Array(5)].map((_, i) => (
+                <div key={i} className="flex items-center gap-3 p-2">
+                  <Skeleton className="h-14 w-14 rounded-xl bg-white/5 flex-shrink-0" />
+                  <div className="flex-1 space-y-2.5">
+                    <Skeleton className="h-4 w-3/4 bg-white/5 rounded-lg" />
+                    <Skeleton className="h-3 w-1/2 bg-white/5 rounded-lg" />
+                  </div>
+                  <Skeleton className="h-4 w-20 bg-white/5 rounded-lg flex-shrink-0" />
                 </div>
-                <Skeleton className="h-4 w-20 bg-white/5 rounded-lg flex-shrink-0" />
-              </div>
-            ))}
-          </div>
-        ) : recentExpenses.length === 0 ? (
-          <div className="px-4 pt-6 text-center">
-            <p className="text-[#F1FFF3]/60 text-sm">No recent expenses</p>
-          </div>
-        ) : (
-          <>
-            <div className="px-4 flex flex-col gap-2">
-              {recentExpenses.map((expense) => (
-                <button
-                  key={expense.id}
-                  onClick={() =>
-                    navigate(`/transaction/${expense.id}/dashboard`)
-                  }
-                  className="flex items-center gap-3 w-full text-left hover:bg-[#0A3A3A]/50 rounded-xl p-2 transition-all duration-200 active:scale-98"
-                >
-                  <div
-                    className="rounded-xl p-3 flex-shrink-0"
-                    style={{
-                      backgroundColor: expense.category_color
-                        ? `${expense.category_color}20`
-                        : "rgba(59, 130, 246, 0.2)",
-                    }}
-                  >
-                    <span className="text-2xl">
-                      {expense.category_icon || "💰"}
-                    </span>
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-[#F1FFF3] font-semibold text-base truncate">
-                      {expense.category_name || "Expense"}
-                    </p>
-                    <div className="flex items-center gap-2 mt-0.5">
-                      <p className="text-[#3299FF] text-xs font-medium whitespace-nowrap">
-                        {formatDate(expense.transaction_date)}
-                      </p>
-                      {expense.subcategory_name && (
-                        <>
-                          <span className="text-[#F1FFF3]/40">•</span>
-                          <p className="text-[#F1FFF3]/70 text-xs truncate">
-                            {expense.subcategory_name}
-                          </p>
-                        </>
-                      )}
-                    </div>
-                  </div>
-
-                  <div className="flex-shrink-0">
-                    <p className={`font-bold text-base whitespace-nowrap ${
-                      expense.type === 'income' 
-                        ? 'text-[#00D09E]' 
-                        : 'text-[#FF6B6B]'
-                    }`}>
-                      {expense.type === 'income' ? '' : '-'}{formatCurrency(expense.amount)}
-                    </p>
-                  </div>
-                </button>
               ))}
             </div>
-
-            <div className="px-4 pb-6">
-              <button
-                onClick={() => navigate("/transactions")}
-                className="w-full bg-gradient-to-r from-[#00D09E] to-[#00B589] hover:from-[#00B589] hover:to-[#009973] transition-all duration-300 text-[#093030] font-bold py-2 px-4 rounded-xl shadow-lg hover:shadow-xl active:scale-95 transform flex items-center justify-center gap-2"
-              >
-                <span>Ver más transacciones</span>
-                <ArrowUpRight className="w-5 h-5" />
-              </button>
+          ) : recentExpenses.length === 0 ? (
+            <div className="px-4 pt-6 text-center">
+              <p className="text-[#F1FFF3]/60 text-sm">No recent expenses</p>
             </div>
-          </>
-        )}
+          ) : (
+            <>
+              <div className="px-4 flex flex-col gap-2">
+                {recentExpenses.map((expense) => (
+                  <button
+                    key={expense.id}
+                    onClick={() =>
+                      navigate(`/transaction/${expense.id}/dashboard`)
+                    }
+                    className="flex items-center gap-3 w-full text-left hover:bg-[#0A3A3A]/50 rounded-xl p-2 transition-all duration-200 active:scale-98"
+                  >
+                    <div
+                      className="rounded-xl p-3 flex-shrink-0"
+                      style={{
+                        backgroundColor: expense.category_color
+                          ? `${expense.category_color}20`
+                          : "rgba(59, 130, 246, 0.2)",
+                      }}
+                    >
+                      <span className="text-2xl">
+                        {expense.category_icon || "💰"}
+                      </span>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-[#F1FFF3] font-semibold text-base truncate">
+                        {expense.category_name || "Expense"}
+                      </p>
+                      <div className="flex items-center gap-2 mt-0.5">
+                        <p className="text-[#3299FF] text-xs font-medium whitespace-nowrap">
+                          {formatDate(expense.transaction_date)}
+                        </p>
+                        {expense.subcategory_name && (
+                          <>
+                            <span className="text-[#F1FFF3]/40">•</span>
+                            <p className="text-[#F1FFF3]/70 text-xs truncate">
+                              {expense.subcategory_name}
+                            </p>
+                          </>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="flex-shrink-0">
+                      <p className={`font-bold text-base whitespace-nowrap ${
+                        expense.type === 'income' 
+                          ? 'text-[#00D09E]' 
+                          : 'text-[#FF6B6B]'
+                      }`}>
+                        {expense.type === 'income' ? '' : '-'}{formatCurrency(expense.amount)}
+                      </p>
+                    </div>
+                  </button>
+                ))}
+              </div>
+
+              <div className="px-4 pb-6 pt-4">
+                <button
+                  onClick={() => navigate("/transactions")}
+                  className="w-full bg-gradient-to-r from-[#00D09E] to-[#00B589] hover:from-[#00B589] hover:to-[#009973] transition-all duration-300 text-[#093030] font-bold py-2 px-4 rounded-xl shadow-lg hover:shadow-xl active:scale-95 transform flex items-center justify-center gap-2"
+                >
+                  <span>Ver más transacciones</span>
+                  <ArrowUpRight className="w-5 h-5" />
+                </button>
+              </div>
+            </>
+          )}
+        </div>
       </div>
 
       <BottomNav />
