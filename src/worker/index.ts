@@ -286,39 +286,39 @@ function normalizeDebtPaymentRow(row: DebtPaymentRow, debtName: string) {
 const JWT_EXPIRATION = 90 * 24 * 60 * 60; // 90 días en segundos
 const COOKIE_MAX_AGE = 90 * 24 * 60 * 60; // 90 días en segundos
 
-async function hashPassword(
-  password: string
-): Promise<{ hash: string; salt: string }> {
-  const salt = crypto.getRandomValues(new Uint8Array(16));
-  const encoder = new TextEncoder();
-  const data = encoder.encode(password);
+// async function hashPassword(
+//   password: string
+// ): Promise<{ hash: string; salt: string }> {
+//   const salt = crypto.getRandomValues(new Uint8Array(16));
+//   const encoder = new TextEncoder();
+//   const data = encoder.encode(password);
 
-  const key = await crypto.subtle.importKey(
-    "raw",
-    data,
-    { name: "PBKDF2" },
-    false,
-    ["deriveBits"]
-  );
+//   const key = await crypto.subtle.importKey(
+//     "raw",
+//     data,
+//     { name: "PBKDF2" },
+//     false,
+//     ["deriveBits"]
+//   );
 
-  const derivedBits = await crypto.subtle.deriveBits(
-    {
-      name: "PBKDF2",
-      salt: salt,
-      iterations: 100000,
-      hash: "SHA-256",
-    },
-    key,
-    256
-  );
+//   const derivedBits = await crypto.subtle.deriveBits(
+//     {
+//       name: "PBKDF2",
+//       salt: salt,
+//       iterations: 100000,
+//       hash: "SHA-256",
+//     },
+//     key,
+//     256
+//   );
 
-  const hash = Array.from(new Uint8Array(derivedBits))
-    .map((b) => b.toString(16).padStart(2, "0"))
-    .join("");
-  const saltBase64 = btoa(String.fromCharCode(...salt));
+//   const hash = Array.from(new Uint8Array(derivedBits))
+//     .map((b) => b.toString(16).padStart(2, "0"))
+//     .join("");
+//   const saltBase64 = btoa(String.fromCharCode(...salt));
 
-  return { hash, salt: saltBase64 };
-}
+//   return { hash, salt: saltBase64 };
+// }
 
 async function verifyPassword(
   password: string,
