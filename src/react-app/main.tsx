@@ -26,7 +26,6 @@ const router = createBrowserRouter([
       const user = context.get(userContext);
       return user;
     },
-
     children: [
       {
         path: "settings",
@@ -37,10 +36,6 @@ const router = createBrowserRouter([
         element: <div>Profile</div>,
       },
     ],
-  },
-  {
-    path: "*",
-    element: <div>404 Not Found</div>,
   },
   {
     path: "transactions",

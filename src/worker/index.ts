@@ -32,41 +32,335 @@ const ALLOWED_FILE_TYPES = [
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB en bytes
 
+type DebtStatus = "activa" | "pagada" | "vencida";
+
+type DebtRowWithAggregates = {
+  id: number;
+  user_id: number;
+  name: string;
+  creditor: string | null;
+  original_amount: number;
+  remaining_amount: number;
+  interest_rate: number | null;
+  start_date: string;
+  due_date: string | null;
+  status: DebtStatus;
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
+  total_paid: number | null;
+  payments_count: number | null;
+  last_payment_date: string | null;
+};
+
+type DebtPaymentRow = {
+  id: number;
+  debt_id: number;
+  transaction_id: number;
+  amount: number;
+  payment_date: string;
+  notes: string | null;
+  created_at: string;
+  transaction_description: string | null;
+  transaction_notes: string | null;
+  account_id: number | null;
+  account_name: string | null;
+};
+
+type NormalizedDebt = ReturnType<typeof normalizeDebtRow>;
+
+function normalizeDebtRow(row: DebtRowWithAggregates) {
+  const originalAmount = Number(row.original_amount ?? 0);
+  const remainingAmount = Number(row.remaining_amount ?? 0);
+  const aggregatedPaid =
+    row.total_paid !== null && row.total_paid !== undefined
+      ? Number(row.total_paid)
+      : originalAmount - remainingAmount;
+  const paidAmount = Math.min(originalAmount, Math.max(0, aggregatedPaid));
+  const pendingAmount = Math.max(0, originalAmount - paidAmount);
+  const paidPercentage =
+    originalAmount > 0 ? Math.min(100, (paidAmount / originalAmount) * 100) : 0;
+  const remainingPercentage =
+    originalAmount > 0
+      ? Math.max(0, (pendingAmount / originalAmount) * 100)
+      : 0;
+
+  const now = new Date();
+  const dueDate = row.due_date ? new Date(row.due_date) : null;
+  const isOverdue =
+    !!dueDate && remainingAmount > 0 && dueDate.getTime() < now.getTime();
+  const daysUntilDue =
+    dueDate && remainingAmount > 0
+      ? Math.ceil((dueDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
+      : null;
+
+  const computedStatus: DebtStatus =
+    remainingAmount <= 0
+      ? "pagada"
+      : isOverdue
+      ? "vencida"
+      : row.status ?? "activa";
+
+  return {
+    id: row.id,
+    name: row.name,
+    creditor: row.creditor,
+    originalAmount,
+    remainingAmount,
+    interestRate: row.interest_rate ? Number(row.interest_rate) : 0,
+    startDate: row.start_date,
+    dueDate: row.due_date,
+    status: computedStatus,
+    notes: row.notes,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+    totals: {
+      totalPaid: paidAmount,
+      pendingAmount,
+      paidPercentage,
+      remainingPercentage,
+      paymentsCount: row.payments_count ? Number(row.payments_count) : 0,
+      lastPaymentDate: row.last_payment_date,
+    },
+    flags: {
+      isOverdue,
+      isPaid: remainingAmount <= 0,
+      daysUntilDue,
+    },
+  };
+}
+
+type DebtsSummary = {
+  totalDebts: number;
+  activeDebts: number;
+  overdueDebts: number;
+  paidDebts: number;
+  totalOriginalAmount: number;
+  totalRemainingAmount: number;
+  totalPaidAmount: number;
+  nextDueDebt: {
+    id: number;
+    name: string;
+    dueDate: string;
+    remainingAmount: number;
+    daysUntilDue: number | null;
+  } | null;
+};
+
+function buildDebtsSummary(debts: NormalizedDebt[]): DebtsSummary {
+  const baseSummary: DebtsSummary = {
+    totalDebts: debts.length,
+    activeDebts: 0,
+    overdueDebts: 0,
+    paidDebts: 0,
+    totalOriginalAmount: 0,
+    totalRemainingAmount: 0,
+    totalPaidAmount: 0,
+    nextDueDebt: null,
+  };
+
+  for (const debt of debts) {
+    baseSummary.totalOriginalAmount += debt.originalAmount;
+    baseSummary.totalRemainingAmount += debt.remainingAmount;
+    baseSummary.totalPaidAmount += debt.totals.totalPaid;
+
+    if (debt.flags.isPaid) {
+      baseSummary.paidDebts += 1;
+    } else if (debt.flags.isOverdue) {
+      baseSummary.overdueDebts += 1;
+    } else {
+      baseSummary.activeDebts += 1;
+    }
+  }
+
+  const upcoming = debts
+    .filter(
+      (debt) =>
+        !debt.flags.isPaid &&
+        debt.dueDate !== null &&
+        debt.flags.daysUntilDue !== null &&
+        debt.flags.daysUntilDue >= 0
+    )
+    .sort((a, b) => {
+      const dateA = new Date(a.dueDate ?? 0).getTime();
+      const dateB = new Date(b.dueDate ?? 0).getTime();
+      return dateA - dateB;
+    });
+
+  if (upcoming.length > 0) {
+    baseSummary.nextDueDebt = {
+      id: upcoming[0].id,
+      name: upcoming[0].name,
+      dueDate: upcoming[0].dueDate!,
+      remainingAmount: upcoming[0].remainingAmount,
+      daysUntilDue: upcoming[0].flags.daysUntilDue,
+    };
+  }
+
+  return baseSummary;
+}
+
+async function getDebtsWithAggregates(
+  db: D1Database,
+  userId: number
+): Promise<DebtRowWithAggregates[]> {
+  const stmt = db.prepare(
+    `SELECT 
+       d.*,
+       COALESCE(SUM(dp.amount), 0) AS total_paid,
+       COUNT(dp.id) AS payments_count,
+       MAX(dp.payment_date) AS last_payment_date
+     FROM debts d
+     LEFT JOIN debt_payments dp ON dp.debt_id = d.id
+     WHERE d.user_id = ?
+     GROUP BY d.id
+     ORDER BY 
+       CASE d.status WHEN 'activa' THEN 0 WHEN 'vencida' THEN 1 ELSE 2 END,
+       d.due_date IS NULL,
+       d.due_date`
+  );
+
+  const { results } = await stmt.bind(userId).all<DebtRowWithAggregates>();
+  return results;
+}
+
+async function getDebtWithAggregates(
+  db: D1Database,
+  debtId: number,
+  userId: number
+): Promise<DebtRowWithAggregates | null> {
+  const stmt = db.prepare(
+    `SELECT 
+       d.*,
+       COALESCE(SUM(dp.amount), 0) AS total_paid,
+       COUNT(dp.id) AS payments_count,
+       MAX(dp.payment_date) AS last_payment_date
+     FROM debts d
+     LEFT JOIN debt_payments dp ON dp.debt_id = d.id
+     WHERE d.id = ? AND d.user_id = ?
+     GROUP BY d.id`
+  );
+
+  return stmt.bind(debtId, userId).first<DebtRowWithAggregates>();
+}
+
+async function getDebtPayments(
+  db: D1Database,
+  debtId: number
+): Promise<DebtPaymentRow[]> {
+  const stmt = db.prepare(
+    `SELECT 
+       dp.*,
+       t.description AS transaction_description,
+       t.notes AS transaction_notes,
+       t.account_id,
+       a.name AS account_name
+     FROM debt_payments dp
+     JOIN transactions t ON t.id = dp.transaction_id
+     LEFT JOIN accounts a ON a.id = t.account_id
+     WHERE dp.debt_id = ?
+     ORDER BY dp.payment_date DESC, dp.created_at DESC`
+  );
+
+  const { results } = await stmt.bind(debtId).all<DebtPaymentRow>();
+  return results;
+}
+
+function normalizeDebtPaymentRow(row: DebtPaymentRow, debtName: string) {
+  return {
+    id: row.id,
+    debtId: row.debt_id,
+    transactionId: row.transaction_id,
+    amount: Number(row.amount ?? 0),
+    paymentDate: row.payment_date,
+    notes: row.notes || row.transaction_notes || null,
+    createdAt: row.created_at,
+    description:
+      row.transaction_description || row.notes || `Pago a ${debtName}`,
+    accountId: row.account_id,
+    accountName: row.account_name,
+  };
+}
+
 // Configuración JWT
 const JWT_EXPIRATION = 90 * 24 * 60 * 60; // 90 días en segundos
 const COOKIE_MAX_AGE = 90 * 24 * 60 * 60; // 90 días en segundos
 
-/**
- * Hashea una contraseña usando SHA-256
- * En producción, considera usar bcrypt o argon2 desde un servicio externo
- */
-async function hashPassword(password: string): Promise<string> {
+async function hashPassword(
+  password: string
+): Promise<{ hash: string; salt: string }> {
+  const salt = crypto.getRandomValues(new Uint8Array(16));
   const encoder = new TextEncoder();
   const data = encoder.encode(password);
-  const hashBuffer = await crypto.subtle.digest("SHA-256", data);
-  const hashArray = Array.from(new Uint8Array(hashBuffer));
-  return hashArray.map((b) => b.toString(16).padStart(2, "0")).join("");
+
+  const key = await crypto.subtle.importKey(
+    "raw",
+    data,
+    { name: "PBKDF2" },
+    false,
+    ["deriveBits"]
+  );
+
+  const derivedBits = await crypto.subtle.deriveBits(
+    {
+      name: "PBKDF2",
+      salt: salt,
+      iterations: 100000,
+      hash: "SHA-256",
+    },
+    key,
+    256
+  );
+
+  const hash = Array.from(new Uint8Array(derivedBits))
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
+  const saltBase64 = btoa(String.fromCharCode(...salt));
+
+  return { hash, salt: saltBase64 };
 }
 
-/**
- * Verifica si una contraseña coincide con su hash
- */
 async function verifyPassword(
   password: string,
-  hash: string
-): Promise<boolean> {
-  const passwordHash = await hashPassword(password);
-  return passwordHash === hash;
+  storedHash: string,
+  storedSalt: string
+) {
+  const salt = Uint8Array.from(atob(storedSalt), (c) => c.charCodeAt(0));
+
+  const encoder = new TextEncoder();
+  const data = encoder.encode(password);
+
+  const key = await crypto.subtle.importKey(
+    "raw",
+    data,
+    { name: "PBKDF2" },
+    false,
+    ["deriveBits"]
+  );
+
+  const derivedBits = await crypto.subtle.deriveBits(
+    {
+      name: "PBKDF2",
+      salt: salt,
+      iterations: 100000,
+      hash: "SHA-256",
+    },
+    key,
+    256
+  );
+
+  const hash = Array.from(new Uint8Array(derivedBits))
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
+
+  return hash === storedHash;
 }
 
 const authMiddleware = createMiddleware<AppContext>(async (c, next) => {
   try {
     const token = getCookie(c, "auth_token");
 
-    // console.log("🔐 authMiddleware: Verificando token...");
-
     if (!token) {
-      // console.log("❌ authMiddleware: No se encontró token");
       return c.json(
         {
           success: false,
@@ -79,8 +373,6 @@ const authMiddleware = createMiddleware<AppContext>(async (c, next) => {
 
     const secret = await c.env.JWT_SECRET.get();
     const payload = await verify(token, secret);
-
-    // console.log("✅ authMiddleware: Token verificado, payload:", payload);
 
     if (!payload || !payload.sub) {
       console.log("❌ authMiddleware: Payload inválido");
@@ -104,7 +396,6 @@ const authMiddleware = createMiddleware<AppContext>(async (c, next) => {
     }>();
 
     if (!user) {
-      // console.log("❌ authMiddleware: Usuario no encontrado o inactivo");
       return c.json(
         {
           success: false,
@@ -113,8 +404,6 @@ const authMiddleware = createMiddleware<AppContext>(async (c, next) => {
         401
       );
     }
-
-    // console.log("✅ authMiddleware: Usuario cargado:", user);
 
     c.set("user", {
       id: user.id,
@@ -162,13 +451,14 @@ app.post("/api/login", async (c) => {
     }
 
     const userStmt = c.env.DB.prepare(
-      "SELECT id, username, password_hash, email, full_name, is_active FROM users WHERE username = ?"
+      "SELECT id, username, password_hash, salt, email, full_name, is_active FROM users WHERE username = ?"
     );
 
     const user = await userStmt.bind(username).first<{
       id: number;
       username: string;
       password_hash: string;
+      salt: string;
       email: string | null;
       full_name: string | null;
       is_active: number;
@@ -194,7 +484,11 @@ app.post("/api/login", async (c) => {
       );
     }
 
-    const isPasswordValid = await verifyPassword(password, user.password_hash);
+    const isPasswordValid = await verifyPassword(
+      password,
+      user.password_hash,
+      user.salt
+    );
 
     if (!isPasswordValid) {
       return c.json(
@@ -209,23 +503,20 @@ app.post("/api/login", async (c) => {
     const updateLoginStmt = c.env.DB.prepare(
       "UPDATE users SET last_login = CURRENT_TIMESTAMP WHERE id = ?"
     );
+
     await updateLoginStmt.bind(user.id).run();
 
     const payload = {
-      sub: user.id, // Subject (user ID)
+      sub: user.id,
       username: user.username,
       email: user.email,
-      exp: Math.floor(Date.now() / 1000) + JWT_EXPIRATION, // Expiración de 90 días
+      exp: Math.floor(Date.now() / 1000) + JWT_EXPIRATION,
       iat: Math.floor(Date.now() / 1000),
     };
 
-    // Asegurar que JWT_SECRET es un string
     const secret = await c.env.JWT_SECRET.get();
-    // console.log(secret);
     const token = await sign(payload, secret);
 
-    // Establecer cookie httpOnly para mayor seguridad
-    // En desarrollo local (localhost), secure debe ser false porque usa HTTP
     setCookie(c, "auth_token", token, {
       httpOnly: true,
       secure: false, // false para desarrollo local
@@ -233,11 +524,6 @@ app.post("/api/login", async (c) => {
       maxAge: COOKIE_MAX_AGE,
       path: "/",
     });
-
-    // console.log("🔐 Login exitoso para:", user.username);
-    // console.log(
-    // "🍪 Cookie configurada con httpOnly, secure: false para desarrollo"
-    // );
 
     return c.json({
       success: true,
@@ -263,12 +549,7 @@ app.post("/api/login", async (c) => {
   }
 });
 
-/**
- * POST /api/logout
- * Cierra la sesión del usuario
- */
 app.post("/api/logout", (c) => {
-  // Eliminar cookie
   setCookie(c, "auth_token", "", {
     httpOnly: true,
     secure: true,
@@ -748,7 +1029,6 @@ app.get("/api/transactions/expenses", async (c) => {
     const startDate = c.req.query("startDate");
     const endDate = c.req.query("endDate");
 
-
     console.log("=== GET /api/transactions/expenses ===");
     console.log("📊 Parámetros recibidos:");
     console.log("  👤 User ID:", userId);
@@ -931,6 +1211,497 @@ app.get("/api/transactions/:id/attachments", async (c) => {
       {
         success: false,
         error: "Error al obtener los archivos adjuntos",
+      },
+      500
+    );
+  }
+});
+
+/**
+ * GET /api/debts
+ * Obtiene todas las deudas del usuario con métricas resumidas
+ */
+app.get("/api/debts", async (c) => {
+  try {
+    const user = c.get("user");
+    const debtRows = await getDebtsWithAggregates(c.env.DB, user.id);
+    const debts = debtRows.map((row) => normalizeDebtRow(row));
+
+    return c.json({
+      success: true,
+      data: {
+        summary: buildDebtsSummary(debts),
+        debts,
+      },
+      count: debts.length,
+    });
+  } catch (error) {
+    console.error("Error al obtener deudas:", error);
+    return c.json(
+      {
+        success: false,
+        error: "Error al obtener las deudas",
+      },
+      500
+    );
+  }
+});
+
+/**
+ * GET /api/debts/:id
+ * Obtiene el detalle de una deuda específica con su historial de pagos
+ */
+app.get("/api/debts/:id", async (c) => {
+  try {
+    const user = c.get("user");
+    const userId = user.id;
+    const debtIdParam = c.req.param("id");
+    const debtId = Number.parseInt(debtIdParam, 10);
+
+    if (Number.isNaN(debtId)) {
+      return c.json(
+        {
+          success: false,
+          error: "ID de deuda inválido",
+        },
+        400
+      );
+    }
+
+    const debtRow = await getDebtWithAggregates(c.env.DB, debtId, userId);
+
+    if (!debtRow) {
+      return c.json(
+        {
+          success: false,
+          error: "Deuda no encontrada",
+        },
+        404
+      );
+    }
+
+    const debt = normalizeDebtRow(debtRow);
+    const paymentRows = await getDebtPayments(c.env.DB, debtId);
+    const payments = paymentRows.map((row) =>
+      normalizeDebtPaymentRow(row, debt.name)
+    );
+
+    return c.json({
+      success: true,
+      data: {
+        debt,
+        payments,
+      },
+    });
+  } catch (error) {
+    console.error("Error al obtener detalle de deuda:", error);
+    return c.json(
+      {
+        success: false,
+        error: "Error al obtener la deuda",
+      },
+      500
+    );
+  }
+});
+
+/**
+ * POST /api/debts
+ * Crea una nueva deuda para el usuario autenticado
+ */
+app.post("/api/debts", async (c) => {
+  try {
+    const user = c.get("user");
+    const userId = user.id;
+    const body = await c.req.json();
+
+    const name = typeof body.name === "string" ? body.name.trim() : "";
+    const creditor =
+      typeof body.creditor === "string" && body.creditor.trim()
+        ? body.creditor.trim()
+        : null;
+    const originalAmount = Number(body.originalAmount);
+    let remainingAmount =
+      body.remainingAmount !== undefined && body.remainingAmount !== null
+        ? Number(body.remainingAmount)
+        : originalAmount;
+    let interestRate =
+      body.interestRate !== undefined && body.interestRate !== null
+        ? Number(body.interestRate)
+        : 0;
+    const startDate =
+      typeof body.startDate === "string" ? body.startDate.trim() : "";
+    const dueDate =
+      typeof body.dueDate === "string" && body.dueDate.trim()
+        ? body.dueDate.trim()
+        : null;
+    const notes =
+      typeof body.notes === "string" && body.notes.trim()
+        ? body.notes.trim()
+        : null;
+
+    if (!name) {
+      return c.json(
+        {
+          success: false,
+          error: "El nombre de la deuda es requerido",
+        },
+        400
+      );
+    }
+
+    if (!Number.isFinite(originalAmount) || originalAmount <= 0) {
+      return c.json(
+        {
+          success: false,
+          error: "El monto original debe ser un número mayor a 0",
+        },
+        400
+      );
+    }
+
+    if (!startDate) {
+      return c.json(
+        {
+          success: false,
+          error: "La fecha de inicio es requerida",
+        },
+        400
+      );
+    }
+
+    const parsedStartDate = new Date(`${startDate}T00:00:00`);
+    if (Number.isNaN(parsedStartDate.getTime())) {
+      return c.json(
+        {
+          success: false,
+          error: "La fecha de inicio no es válida",
+        },
+        400
+      );
+    }
+
+    if (!Number.isFinite(remainingAmount) || remainingAmount < 0) {
+      remainingAmount = originalAmount;
+    }
+
+    if (remainingAmount > originalAmount) {
+      remainingAmount = originalAmount;
+    }
+
+    if (!Number.isFinite(interestRate) || interestRate < 0) {
+      interestRate = 0;
+    }
+
+    let computedStatus: DebtStatus = remainingAmount <= 0 ? "pagada" : "activa";
+
+    if (computedStatus !== "pagada" && dueDate) {
+      const parsedDueDate = new Date(`${dueDate}T00:00:00`);
+      if (!Number.isNaN(parsedDueDate.getTime())) {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        if (parsedDueDate.getTime() < today.getTime()) {
+          computedStatus = "vencida";
+        }
+      }
+    }
+
+    const insertStmt = c.env.DB.prepare(
+      `INSERT INTO debts 
+       (user_id, name, creditor, original_amount, remaining_amount, interest_rate, start_date, due_date, status, notes)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+    );
+
+    const result = await insertStmt
+      .bind(
+        userId,
+        name,
+        creditor,
+        originalAmount,
+        remainingAmount,
+        interestRate,
+        startDate,
+        dueDate,
+        computedStatus,
+        notes
+      )
+      .run();
+
+    const debtId = result.meta.last_row_id;
+
+    const newDebtRow = await getDebtWithAggregates(c.env.DB, debtId, userId);
+
+    if (!newDebtRow) {
+      return c.json(
+        {
+          success: false,
+          error: "No se pudo obtener la deuda creada",
+        },
+        500
+      );
+    }
+
+    const debt = normalizeDebtRow(newDebtRow);
+
+    return c.json(
+      {
+        success: true,
+        data: {
+          debt,
+        },
+      },
+      201
+    );
+  } catch (error) {
+    console.error("Error al crear deuda:", error);
+    return c.json(
+      {
+        success: false,
+        error: "Error al crear la deuda",
+      },
+      500
+    );
+  }
+});
+
+/**
+ * POST /api/debts/:id/payments
+ * Registra un pago para una deuda y actualiza el saldo pendiente
+ */
+app.post("/api/debts/:id/payments", async (c) => {
+  try {
+    const user = c.get("user");
+    const userId = user.id;
+    const debtIdParam = c.req.param("id");
+    const debtId = Number.parseInt(debtIdParam, 10);
+
+    if (Number.isNaN(debtId)) {
+      return c.json(
+        {
+          success: false,
+          error: "ID de deuda inválido",
+        },
+        400
+      );
+    }
+
+    const body = await c.req.json();
+
+    const amount = Number(body.amount);
+    const accountId = Number.parseInt(body.accountId, 10);
+    const rawPaymentDate =
+      typeof body.paymentDate === "string" && body.paymentDate.trim()
+        ? body.paymentDate.trim()
+        : null;
+    const description =
+      typeof body.description === "string" && body.description.trim()
+        ? body.description.trim()
+        : "";
+    const notes =
+      typeof body.notes === "string" && body.notes.trim()
+        ? body.notes.trim()
+        : null;
+
+    if (!Number.isFinite(amount) || amount <= 0) {
+      return c.json(
+        {
+          success: false,
+          error: "El monto del pago debe ser mayor a 0",
+        },
+        400
+      );
+    }
+
+    if (!Number.isFinite(accountId)) {
+      return c.json(
+        {
+          success: false,
+          error: "La cuenta seleccionada no es válida",
+        },
+        400
+      );
+    }
+
+    const debtRow = await getDebtWithAggregates(c.env.DB, debtId, userId);
+
+    if (!debtRow) {
+      return c.json(
+        {
+          success: false,
+          error: "Deuda no encontrada",
+        },
+        404
+      );
+    }
+
+    const debt = normalizeDebtRow(debtRow);
+
+    if (debt.flags.isPaid) {
+      return c.json(
+        {
+          success: false,
+          error: "La deuda ya está pagada",
+        },
+        400
+      );
+    }
+
+    const account = await c.env.DB.prepare(
+      `SELECT id FROM accounts WHERE id = ? AND user_id = ? AND is_active = 1`
+    )
+      .bind(accountId, userId)
+      .first();
+
+    if (!account) {
+      return c.json(
+        {
+          success: false,
+          error: "La cuenta seleccionada no pertenece al usuario",
+        },
+        400
+      );
+    }
+
+    const paymentDate = rawPaymentDate || new Date().toISOString().slice(0, 10);
+
+    const parsedPaymentDate = new Date(`${paymentDate}T00:00:00`);
+    if (Number.isNaN(parsedPaymentDate.getTime())) {
+      return c.json(
+        {
+          success: false,
+          error: "La fecha de pago no es válida",
+        },
+        400
+      );
+    }
+
+    const amountToApply = Math.min(amount, debt.remainingAmount);
+
+    if (amountToApply <= 0) {
+      return c.json(
+        {
+          success: false,
+          error: "El monto del pago supera el saldo pendiente",
+        },
+        400
+      );
+    }
+
+    const finalDescription =
+      description || `Pago ${debt.name} - ${paymentDate}`;
+
+    await c.env.DB.prepare("BEGIN TRANSACTION").run();
+
+    try {
+      const insertTransactionStmt = c.env.DB.prepare(
+        `INSERT INTO transactions 
+         (user_id, type, amount, category_id, subcategory_id, account_id, description, notes, transaction_date, debt_id)
+         VALUES (?, 'debt_payment', ?, NULL, NULL, ?, ?, ?, ?, ?)`
+      );
+
+      const transactionResult = await insertTransactionStmt
+        .bind(
+          userId,
+          amountToApply,
+          accountId,
+          finalDescription,
+          notes,
+          paymentDate,
+          debtId
+        )
+        .run();
+
+      const transactionId = transactionResult.meta.last_row_id;
+
+      const insertPaymentStmt = c.env.DB.prepare(
+        `INSERT INTO debt_payments 
+         (debt_id, transaction_id, amount, payment_date, notes)
+         VALUES (?, ?, ?, ?, ?)`
+      );
+
+      await insertPaymentStmt
+        .bind(debtId, transactionId, amountToApply, paymentDate, notes)
+        .run();
+
+      const remainingAfter = Math.max(0, debt.remainingAmount - amountToApply);
+
+      let newStatus: DebtStatus = remainingAfter <= 0 ? "pagada" : "activa";
+
+      if (newStatus === "activa" && debt.dueDate) {
+        const dueDateObj = new Date(`${debt.dueDate}T00:00:00`);
+        if (
+          !Number.isNaN(dueDateObj.getTime()) &&
+          dueDateObj.getTime() < parsedPaymentDate.getTime()
+        ) {
+          newStatus = "vencida";
+        }
+      }
+
+      const updateDebtStmt = c.env.DB.prepare(
+        `UPDATE debts 
+         SET remaining_amount = ?, status = ?, updated_at = CURRENT_TIMESTAMP
+         WHERE id = ?`
+      );
+
+      await updateDebtStmt.bind(remainingAfter, newStatus, debtId).run();
+
+      await updateAccountBalance(c.env.DB, accountId, amountToApply, "expense");
+
+      await c.env.DB.prepare("COMMIT").run();
+
+      const updatedDebtRow = await getDebtWithAggregates(
+        c.env.DB,
+        debtId,
+        userId
+      );
+
+      if (!updatedDebtRow) {
+        return c.json(
+          {
+            success: false,
+            error: "No se pudo obtener la deuda actualizada",
+          },
+          500
+        );
+      }
+
+      const updatedDebt = normalizeDebtRow(updatedDebtRow);
+      const paymentRows = await getDebtPayments(c.env.DB, debtId);
+      const payments = paymentRows.map((row) =>
+        normalizeDebtPaymentRow(row, updatedDebt.name)
+      );
+
+      return c.json({
+        success: true,
+        data: {
+          debt: updatedDebt,
+          payments,
+          appliedAmount: amountToApply,
+          overpaymentAmount:
+            amount > amountToApply ? amount - amountToApply : 0,
+        },
+        message:
+          amount > amountToApply
+            ? "Pago registrado. El monto ingresado excedía el saldo pendiente y se ajustó automáticamente."
+            : "Pago registrado correctamente.",
+      });
+    } catch (error) {
+      await c.env.DB.prepare("ROLLBACK").run();
+      console.error("Error en la transacción de pago de deuda:", error);
+      return c.json(
+        {
+          success: false,
+          error: "Error al registrar el pago de la deuda",
+        },
+        500
+      );
+    }
+  } catch (error) {
+    console.error("Error al procesar pago de deuda:", error);
+    return c.json(
+      {
+        success: false,
+        error: "Error al registrar el pago de la deuda",
       },
       500
     );

@@ -13,11 +13,13 @@ import {
 import { ActionType } from "@/dashboard/types";
 import { Home, Layers, Plus, Search, User, PlusIcon } from "lucide-react";
 import { useState } from "react";
+import { useNavigate } from "react-router";
 import { TransactionForm } from "@/dashboard/components/forms/TransactionForm";
 
 export function BottomNav() {
   const [showQuickActions, setShowQuickActions] = useState(false);
   const [activeForm, setActiveForm] = useState<ActionType>(null);
+  const navigate = useNavigate();
 
   const handleActionClick = (actionType: ActionType) => {
     setShowQuickActions(false);
@@ -98,7 +100,10 @@ export function BottomNav() {
       <nav className="fixed bottom-0 left-0 right-0 bg-[#0E3E3E]/95 backdrop-blur-lg rounded-t-[50px] border-white/10 z-50">
         <div className="flex items-center justify-around h-20 px-6 ">
           {/* Home Button */}
-          <button className="flex items-center justify-center w-14 h-14 text-white/60 hover:text-white hover:scale-105 transition-all duration-200 ">
+          <button
+            onClick={() => navigate("/dashboard")}
+            className="flex items-center justify-center w-14 h-14 text-white/60 hover:text-white hover:scale-105 transition-all duration-200 "
+          >
             <Home size={28} strokeWidth={2} />
           </button>
 
@@ -122,7 +127,10 @@ export function BottomNav() {
           </button>
 
           {/* Layers Button */}
-          <button className="flex items-center justify-center w-14 h-14 text-white/60 hover:text-white hover:scale-105 transition-all duration-200">
+          <button
+            onClick={() => navigate("/debts")}
+            className="flex items-center justify-center w-14 h-14 text-white/60 hover:text-white hover:scale-105 transition-all duration-200"
+          >
             <Layers size={28} strokeWidth={2} />
           </button>
 

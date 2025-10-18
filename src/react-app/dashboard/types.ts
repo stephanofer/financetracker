@@ -126,3 +126,73 @@ export interface Expenses {
     total_count: number;
   };
 }
+
+export type DebtStatus = "activa" | "pagada" | "vencida";
+
+export interface Debt {
+  id: number;
+  name: string;
+  creditor: string | null;
+  originalAmount: number;
+  remainingAmount: number;
+  interestRate: number;
+  startDate: string;
+  dueDate: string | null;
+  status: DebtStatus;
+  notes: string | null;
+  createdAt: string;
+  updatedAt: string;
+  totals: {
+    totalPaid: number;
+    pendingAmount: number;
+    paidPercentage: number;
+    remainingPercentage: number;
+    paymentsCount: number;
+    lastPaymentDate: string | null;
+  };
+  flags: {
+    isOverdue: boolean;
+    isPaid: boolean;
+    daysUntilDue: number | null;
+  };
+}
+
+export interface DebtSummary {
+  totalDebts: number;
+  activeDebts: number;
+  overdueDebts: number;
+  paidDebts: number;
+  totalOriginalAmount: number;
+  totalRemainingAmount: number;
+  totalPaidAmount: number;
+  nextDueDebt: {
+    id: number;
+    name: string;
+    dueDate: string;
+    remainingAmount: number;
+    daysUntilDue: number | null;
+  } | null;
+}
+
+export interface DebtPayment {
+  id: number;
+  debtId: number;
+  transactionId: number;
+  amount: number;
+  paymentDate: string;
+  notes: string | null;
+  createdAt: string;
+  description: string;
+  accountId: number | null;
+  accountName: string | null;
+}
+
+export interface DebtListResponse {
+  summary: DebtSummary;
+  debts: Debt[];
+}
+
+export interface DebtDetailResponse {
+  debt: Debt;
+  payments: DebtPayment[];
+}

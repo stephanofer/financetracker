@@ -28,7 +28,14 @@ export function DashboardContainer() {
         <div className="flex items-start justify-between mb-2">
           <div>
             <h1 className="text-base font-semibold mb-1">
-              Hi, Welcome Back {user.full_name || user.username}
+              Hi, Welcome Back {(() => {
+                const name = user.full_name || user.username || "";
+                const parts = name.split(" ");
+                if (parts.length > 1) {
+                  return `${parts[0]} ${parts[1][0]}.`;
+                }
+                return name;
+              })()}
             </h1>
             <Greeting />
           </div>
