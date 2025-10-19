@@ -45,7 +45,7 @@ export function TransactionForm({ handleClose, type }: TransactionFormProps) {
   const { mutate, isPending } = useTransaction();
 
   const filteredCategories = categories.filter((cat) => cat.type === type);
-  
+
   const selectedCategoryId = form.watch("categoryId");
 
   const filteredSubcategories = selectedCategoryId
@@ -78,7 +78,6 @@ export function TransactionForm({ handleClose, type }: TransactionFormProps) {
     if (data.subcategoryId) {
       formData.append("subcategoryId", data.subcategoryId);
     }
-
 
     if (data.file) {
       formData.append("file", data.file[0]);
@@ -181,9 +180,9 @@ export function TransactionForm({ handleClose, type }: TransactionFormProps) {
                     <SelectValue
                       placeholder={
                         !selectedCategoryId
-                          ? "Primero selecciona una categoría"
+                          ? "Selecciona una categoría"
                           : filteredSubcategories.length === 0
-                          ? "No hay subcategorías disponibles"
+                          ? "No hay subcategorías"
                           : "Seleccionar Subcategoría"
                       }
                     />
@@ -249,27 +248,27 @@ export function TransactionForm({ handleClose, type }: TransactionFormProps) {
           )}
         />
 
-        <FormField
-          control={form.control}
-          name="file"
-          render={({ field: { value, onChange, ...fieldProps } }) => (
-            <FormItem>
-              <FormLabel>Comprobante (Opcional)</FormLabel>
-              <FormControl>
-                <FileUpload
-                  value={value ?? null}
-                  onChange={onChange}
-                  {...fieldProps}
-                />
-              </FormControl>
-              <FormDescription className="text-xs text-slate-400 flex items-center gap-1.5">
-                <span className="inline-block w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse"></span>
-                Formatos: JPG, PNG, WEBP, PDF (Máx. 5MB)
-              </FormDescription>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+          <FormField
+            control={form.control}
+            name="file"
+            render={({ field: { value, onChange, ...fieldProps } }) => (
+              <FormItem>
+                <FormLabel>Comprobante (Opcional)</FormLabel>
+                <FormControl>
+                  <FileUpload
+                    value={value ?? null}
+                    onChange={onChange}
+                    {...fieldProps}
+                  />
+                </FormControl>
+                <FormDescription className="text-xs text-slate-400 flex items-center gap-1.5">
+                  <span className="inline-block w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse"></span>
+                  Formatos: JPG, PNG, WEBP, PDF (Máx. 5MB)
+                </FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
 
         <Button type="submit" className="w-full" disabled={isPending}>
           {isPending ? (
