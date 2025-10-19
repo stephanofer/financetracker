@@ -3,7 +3,7 @@ import { userContext } from "@/contexts/auth";
 import { ApiResponse, User } from "@/dashboard/types";
 
 export const authMiddleware: MiddlewareFunction = async ({ context }, next) => {
-  const response = await fetch("/api/me", {
+  const response = await fetch("/api/auth/me", {
     credentials: "include",
   });
 

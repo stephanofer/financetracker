@@ -5,7 +5,7 @@ import { ApiResponse, User } from "@/dashboard/types";
 async function loginUser(
   credentials: LoginFormData
 ): Promise<ApiResponse<User>> {
-  const response = await fetch("/api/login", {
+  const response = await fetch("/api/auth/login", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -38,7 +38,7 @@ export function useProfile() {
   return useQuery({
     queryKey: ["user"],
     queryFn: async (): Promise<ApiResponse<User>> => {
-      const response = await fetch("/api/me", {
+      const response = await fetch("/api/auth/me", {
         credentials: "include",
       });
 

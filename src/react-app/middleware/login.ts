@@ -2,7 +2,7 @@ import { ApiResponse, User } from "@/dashboard/types";
 import { MiddlewareFunction, redirect } from "react-router";
 
 export const loggingMiddleware: MiddlewareFunction = async (_context, next) => {
-  const response = await fetch("/api/me", {
+  const response = await fetch("/api/auth/me", {
     credentials: "include",
   });
 

@@ -5,7 +5,7 @@
     "types": ["vite/client", "./worker-configuration.d.ts"],
     "baseUrl": ".",
     "paths": {
-      "@/*": ["./src/*"]
+      "@/react/*": ["./src/react-app/*"]
     }
   },
   "include": ["src/worker"]
