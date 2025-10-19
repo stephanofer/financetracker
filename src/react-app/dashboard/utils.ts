@@ -1,5 +1,4 @@
 export const getExpenseMessage = (percentage: number) => {
-  console.log(percentage);
   if (percentage <= 30) return "Of Your Expenses, Looks Good.";
   if (percentage <= 50) return "Of Your Expenses, Keep an Eye on it.";
   if (percentage <= 70) return "Of Your Expenses, Consider Reducing.";

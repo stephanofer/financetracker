@@ -8,107 +8,97 @@ import {
 
 const transactions = new Hono<AppContext>();
 
-transactions.post("/transaction", async (c) => {
-  const body = await c.req.parseBody();
-
-  const user = c.get("user");
-
-  const amount = body["amount"] ? parseFloat(body["amount"] as string) : null;
-  const categoryId = body["categoryId"]
-    ? parseInt(body["categoryId"] as string)
-    : null;
-  const subcategoryId = body["subcategoryId"]
-    ? parseInt(body["subcategoryId"] as string)
-    : null;
-  const accountId = body["accountId"]
-    ? parseInt(body["accountId"] as string)
-    : null;
-  const description = body["description"] || null;
-  const type = body["type"];
-  const notes = body["notes"] || null;
-  const userId = user.id;
-  const date = body["date"] || new Date().toISOString();
-  const file = body["file"] || null;
-
-  console.log("=== POST /api/transaction ===");
-  console.log("📊 Amount:", amount);
-  console.log("🏦 Account ID:", accountId);
-  console.log("📂 Category ID:", categoryId);
-  console.log("📋 Subcategory ID:", subcategoryId);
-  console.log("👤 User ID:", userId);
-  console.log("🔖 Type:", type);
-  console.log("📝 Description:", description);
-  console.log("📄 Notes:", notes);
-  console.log("📅 Date:", date);
-  console.log("📎 Has File:", !!file);
-  console.log("🗂️ File Type:", file instanceof File ? file.type : null);
-  console.log("============================");
-
-  if (!amount || !accountId || !userId || !type) {
-    return c.json(
-      {
-        success: false,
-        error: "amount, accountId, userId y type son requeridos",
-      },
-      400
-    );
-  }
-
-  if (type !== "income" && type !== "expense") {
-    return c.json(
-      {
-        success: false,
-        error: "type debe ser 'income' o 'expense'",
-      },
-      400
-    );
-  }
-
-  if (file && file instanceof File && !ALLOWED_FILE_TYPES.includes(file.type)) {
-    return c.json(
-      {
-        error: "Tipo de archivo no permitido",
-        message: "Solo se aceptan imágenes o PDF",
-      },
-      400
-    );
-  }
-
-  if (file && file instanceof File && file.size > MAX_FILE_SIZE) {
-    return c.json(
-      {
-        error: "Archivo muy grande",
-        message: "El archivo debe pesar menos de 5MB",
-      },
-      400
-    );
-  }
-
-  let r2Key: string | null = null;
-  let r2Url: string | null = null;
-  let uploadedFile: File | null = null;
-
-  if (file && file instanceof File) {
-    const timestamp = Date.now();
-    const randomString = Math.random().toString(36).substring(2, 15);
-    const fileExtension = file.name.split(".").pop();
-    r2Key = `uploads/${timestamp}-${randomString}.${fileExtension}`;
-
-    await c.env.BUCKET.put(r2Key, file.stream(), {
-      httpMetadata: {
-        contentType: file.type,
-      },
-      customMetadata: {
-        originalName: file.name,
-        uploadedBy: "user",
-      },
-    });
-
-    r2Url = `https://cdnfintracker.stephanofer.com/${r2Key}`;
-    uploadedFile = file;
-  }
-
+transactions.post("/", async (c) => {
   try {
+    const body = await c.req.parseBody();
+
+    const user = c.get("user");
+
+    const amount = body["amount"] ? parseFloat(body["amount"] as string) : null;
+    const categoryId = body["categoryId"]
+      ? parseInt(body["categoryId"] as string)
+      : null;
+    const subcategoryId = body["subcategoryId"]
+      ? parseInt(body["subcategoryId"] as string)
+      : null;
+    const accountId = body["accountId"]
+      ? parseInt(body["accountId"] as string)
+      : null;
+    const description = body["description"] || null;
+    const type = body["type"];
+    const notes = body["notes"] || null;
+    const userId = user.id;
+    const date = body["date"] || new Date().toISOString();
+    const file = body["file"] || null;
+
+    if (!amount || !accountId || !userId || !type) {
+      return c.json(
+        {
+          success: false,
+          error: "amount, accountId, userId y type son requeridos",
+        },
+        400
+      );
+    }
+
+    if (type !== "income" && type !== "expense") {
+      return c.json(
+        {
+          success: false,
+          error: "type debe ser 'income' o 'expense'",
+        },
+        400
+      );
+    }
+
+    if (
+      file &&
+      file instanceof File &&
+      !ALLOWED_FILE_TYPES.includes(file.type)
+    ) {
+      return c.json(
+        {
+          error: "Tipo de archivo no permitido",
+          message: "Solo se aceptan imágenes o PDF",
+        },
+        400
+      );
+    }
+
+    if (file && file instanceof File && file.size > MAX_FILE_SIZE) {
+      return c.json(
+        {
+          error: "Archivo muy grande",
+          message: "El archivo debe pesar menos de 5MB",
+        },
+        400
+      );
+    }
+
+    let r2Key: string | null = null;
+    let r2Url: string | null = null;
+    let uploadedFile: File | null = null;
+
+    if (file && file instanceof File) {
+      const timestamp = Date.now();
+      const randomString = Math.random().toString(36).substring(2, 15);
+      const fileExtension = file.name.split(".").pop();
+      r2Key = `uploads/${timestamp}-${randomString}.${fileExtension}`;
+
+      await c.env.BUCKET.put(r2Key, file.stream(), {
+        httpMetadata: {
+          contentType: file.type,
+        },
+        customMetadata: {
+          originalName: file.name,
+          uploadedBy: "user",
+        },
+      });
+
+      r2Url = `https://cdnfintracker.stephanofer.com/${r2Key}`;
+      uploadedFile = file;
+    }
+
     const stmt = c.env.DB.prepare(
       `INSERT INTO transactions 
        (user_id, type, amount, category_id, subcategory_id, account_id, description, notes, transaction_date) 
@@ -147,8 +137,8 @@ transactions.post("/transaction", async (c) => {
       await attachmentStmt
         .bind(
           transactionId,
-          r2Key.split("/").pop(), // nombre del archivo en R2
-          uploadedFile.name, // nombre original
+          r2Key.split("/").pop(),
+          uploadedFile.name,
           uploadedFile.size,
           uploadedFile.type,
           fileType,
@@ -159,7 +149,6 @@ transactions.post("/transaction", async (c) => {
         .run();
     }
 
-    // Actualizar el balance de la cuenta
     await updateAccountBalance(c.env.DB, accountId, amount, type as string);
 
     const getTransactionStmt = c.env.DB.prepare(
@@ -174,34 +163,34 @@ transactions.post("/transaction", async (c) => {
       },
     });
   } catch (error) {
-    console.error("Error al insertar transacción:", error);
+    if (error instanceof Error && error.message.includes("boundary")) {
+      return c.json(
+        {
+          success: false,
+          error: "Formato de solicitud inválido",
+          message:
+            "El Content-Type debe ser multipart/form-data con boundary válido",
+        },
+        400
+      );
+    }
+
     return c.json(
       {
         success: false,
         error: "Error al crear la transacción",
+        message: error instanceof Error ? error.message : "Error desconocido",
       },
       500
     );
   }
 });
-
-transactions.get("/expenses", async (c) => {
+transactions.get("/summary", async (c) => {
   try {
     const user = c.get("user");
     const userId = user.id;
     const limit = c.req.query("limit");
     const offset = c.req.query("offset") || "0";
-    const startDate = c.req.query("startDate");
-    const endDate = c.req.query("endDate");
-
-    console.log("=== GET /api/transactions/expenses ===");
-    console.log("📊 Parámetros recibidos:");
-    console.log("  👤 User ID:", userId);
-    console.log("  📏 Limit:", limit || "sin límite");
-    console.log("  ⏭️  Offset:", offset);
-    console.log("  📅 Start Date:", startDate || "sin filtro");
-    console.log("  📅 End Date:", endDate || "sin filtro");
-    console.log("=====================================");
 
     let query = `
       SELECT 
@@ -216,9 +205,95 @@ transactions.get("/expenses", async (c) => {
       LEFT JOIN categories c ON t.category_id = c.id
       LEFT JOIN subcategories s ON t.subcategory_id = s.id
       LEFT JOIN accounts a ON t.account_id = a.id
-      WHERE t.user_id = ? AND t.type = 'expense'
+      WHERE t.user_id = ?
     `;
     const params: (string | number)[] = [userId];
+
+    query += " ORDER BY t.transaction_date DESC, t.created_at DESC";
+
+    if (limit) {
+      query += " LIMIT ? OFFSET ?";
+      params.push(parseInt(limit), parseInt(offset));
+    }
+
+    const stmt = c.env.DB.prepare(query);
+    const { results } = await stmt.bind(...params).all();
+
+    // Obtener el total de gastos (expense) del usuario
+    const totalStmt = c.env.DB.prepare(
+      `SELECT 
+         SUM(amount) as total_expenses,
+         COUNT(*) as total_count
+       FROM transactions 
+       WHERE user_id = ? AND type = 'expense'`
+    );
+    const totalResult = await totalStmt.bind(userId).first<{
+      total_expenses: number | null;
+      total_count: number;
+    }>();
+
+    const balanceStmt = c.env.DB.prepare(
+      `SELECT SUM(balance) as total_balance FROM accounts WHERE user_id = ? AND is_active = 1`
+    );
+    const balanceResult = await balanceStmt
+      .bind(userId)
+      .first<{ total_balance: number | null }>();
+
+    return c.json({
+      success: true,
+      data: {
+        total: {
+          total_expenses: totalResult?.total_expenses || 0,
+          total_balance: balanceResult?.total_balance || 0,
+        },
+        results,
+      },
+      count: results.length,
+    });
+  } catch (error) {
+    console.error("Error al obtener gastos:", error);
+    return c.json(
+      {
+        success: false,
+        error: "Error al obtener los gastos",
+      },
+      500
+    );
+  }
+});
+
+transactions.get("/:type", async (c) => {
+  try {
+    const type = c.req.param("type");
+    const user = c.get("user");
+    const userId = user.id;
+    const limit = c.req.query("limit");
+    const offset = c.req.query("offset") || "0";
+    const startDate = c.req.query("startDate");
+    const endDate = c.req.query("endDate");
+
+    let query = `
+      SELECT 
+        t.*,
+        c.name as category_name,
+        c.icon as category_icon,
+        c.color as category_color,
+        s.name as subcategory_name,
+        a.name as account_name,
+        a.type as account_type
+      FROM transactions t
+      LEFT JOIN categories c ON t.category_id = c.id
+      LEFT JOIN subcategories s ON t.subcategory_id = s.id
+      LEFT JOIN accounts a ON t.account_id = a.id
+      WHERE t.user_id = ?
+    `;
+    const params: (string | number)[] = [userId];
+
+    if (type === "expenses") {
+      query += " AND t.type = 'expense'";
+    } else if (type === "incomes") {
+      query += " AND t.type = 'income'";
+    }
 
     if (startDate) {
       query += " AND t.transaction_date >= ?";
@@ -240,35 +315,9 @@ transactions.get("/expenses", async (c) => {
     const stmt = c.env.DB.prepare(query);
     const { results } = await stmt.bind(...params).all();
 
-    // Obtener el total de gastos (sin límite)
-    const totalStmt = c.env.DB.prepare(
-      `SELECT 
-         SUM(amount) as total_expenses,
-         COUNT(*) as total_count
-       FROM transactions 
-       WHERE user_id = ? AND type = 'expense'
-       ${startDate ? "AND transaction_date >= ?" : ""}
-       ${endDate ? "AND transaction_date <= ?" : ""}`
-    );
-
-    const totalParams: string[] = [userId.toString()];
-    if (startDate) totalParams.push(startDate);
-    if (endDate) totalParams.push(endDate);
-
-    const totalResult = await totalStmt.bind(...totalParams).first<{
-      total_expenses: number | null;
-      total_count: number;
-    }>();
-
     return c.json({
       success: true,
-      data: {
-        results,
-        total: {
-          total_expenses: totalResult?.total_expenses || 0,
-          total_count: totalResult?.total_count || 0,
-        },
-      },
+      data: results,
       count: results.length,
     });
   } catch (error) {
@@ -277,6 +326,71 @@ transactions.get("/expenses", async (c) => {
       {
         success: false,
         error: "Error al obtener los gastos",
+      },
+      500
+    );
+  }
+});
+
+transactions.get("/:id", async (c) => {
+  try {
+    const transactionId = c.req.param("id");
+    const user = c.get("user");
+    const userId = user.id;
+
+    const transactionStmt = c.env.DB.prepare(
+      `SELECT 
+        t.*,
+        c.name as category_name,
+        c.icon as category_icon,
+        c.color as category_color,
+        sc.name as subcategory_name,
+        a.name as account_name,
+        a.type as account_type
+      FROM transactions t
+      LEFT JOIN categories c ON t.category_id = c.id
+      LEFT JOIN subcategories sc ON t.subcategory_id = sc.id
+      LEFT JOIN accounts a ON t.account_id = a.id
+      WHERE t.id = ? AND t.user_id = ?`
+    );
+
+    const transaction = await transactionStmt
+      .bind(transactionId, userId)
+      .first();
+
+    if (!transaction) {
+      return c.json(
+        {
+          success: false,
+          error: "Transacción no encontrada",
+        },
+        404
+      );
+    }
+
+    const attachmentsStmt = c.env.DB.prepare(
+      `SELECT * FROM attachments WHERE transaction_id = ? ORDER BY uploaded_at DESC`
+    );
+
+    const { results: attachments } = await attachmentsStmt
+      .bind(transactionId)
+      .all();
+
+    const transactionWithAttachments = {
+      ...transaction,
+      attachments: attachments,
+    };
+
+    return c.json({
+      success: true,
+      data: transactionWithAttachments,
+    });
+  } catch (error) {
+    console.error("Error al obtener detalles de la transacción:", error);
+    return c.json(
+      {
+        success: false,
+        error: "Error al obtener los detalles de la transacción",
       },
       500
     );

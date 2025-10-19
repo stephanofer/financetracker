@@ -1,26 +1,24 @@
-import { Bell, ArrowUpRight, Check } from "lucide-react";
-import { useNavigate, useLoaderData } from "react-router";
+import { Skeleton } from "@/components/ui/skeleton";
 import { BottomNav } from "@/dashboard/components/BottomNav";
 import { Greeting } from "@/dashboard/components/Greeting";
-import { useTotalBalance, useExpenses } from "@/dashboard/hooks/useMainDetails";
-import { Skeleton } from "@/components/ui/skeleton";
+import { useSummary } from "@/dashboard/hooks/useMainDetails";
 import { User } from "@/dashboard/types";
+import { formatCurrency, formatDate } from "@/dashboard/utils";
+import { ArrowUpRight, Bell, Check } from "lucide-react";
+import { useLoaderData, useNavigate } from "react-router";
 import { MainDetails } from "./components/home/MainDetails";
 import { SavingsCard } from "./components/home/SavingsCard";
-import { formatCurrency, formatDate } from "@/dashboard/utils";
 
 export function DashboardContainer() {
   const navigate = useNavigate();
 
   const user = useLoaderData() as User;
 
-  const { data: balanceData, isPending: isLoadingBalance } = useTotalBalance();
-
-  const { data: expensesData, isPending: isLoadingExpenses } = useExpenses({
+  const { data: summaryData, isPending: isLoadingSummary } = useSummary({
     limit: 10,
   });
 
-  const recentExpenses = expensesData?.data.results || [];
+  const { total, results: transactions = [] } = summaryData?.data || {};
 
   return (
     <div className="flex flex-col h-full">
@@ -28,7 +26,8 @@ export function DashboardContainer() {
         <div className="flex items-start justify-between mb-2">
           <div>
             <h1 className="text-base font-semibold mb-1">
-              Hi, Welcome Back {(() => {
+              Hi, Welcome Back{" "}
+              {(() => {
                 const name = user.full_name || user.username || "";
                 const parts = name.split(" ");
                 if (parts.length > 1) {
@@ -47,23 +46,18 @@ export function DashboardContainer() {
 
       <div className="px-6 ">
         <div className="flex items-start justify-between mb-6 gap-4">
-          {isLoadingBalance || isLoadingExpenses ? (
+          {isLoadingSummary ? (
             <div className="flex flex-col w-full gap-4">
-              <Skeleton className="h-32 w-full rounded-3xl bg-white/5" />
               <div className="flex gap-4">
-                <Skeleton className="h-24 w-1/2 rounded-3xl bg-white/5" />
-                <Skeleton className="h-24 w-1/2 rounded-3xl bg-white/5" />
+                <Skeleton className="h-[76px] w-1/2 rounded-3xl bg-white/5" />
+                <Skeleton className="h-[76px] w-1/2 rounded-3xl bg-white/5" />
               </div>
+              <Skeleton className="h-[48px] w-full rounded-3xl bg-white/5" />
             </div>
-          ) : balanceData && expensesData ? (
-            <MainDetails
-              balanceData={balanceData}
-              expensesData={expensesData}
-            />
+          ) : total ? (
+            <MainDetails total={total} />
           ) : null}
         </div>
-
-
       </div>
 
       <div className="px-6 mb-4">
@@ -96,14 +90,14 @@ export function DashboardContainer() {
         <div className="space-y-4">
           {/* Savings Card */}
           <div className="px-6 pb-6 pt-4 m-0">
-            <SavingsCard 
+            <SavingsCard
               savingsPercentage={35}
               revenueLastWeek={4000}
               foodLastWeek={100}
             />
           </div>
-        
-          {isLoadingExpenses ? (
+
+          {isLoadingSummary ? (
             <div className="px-4 pt-4 flex flex-col gap-4">
               {[...Array(5)].map((_, i) => (
                 <div key={i} className="flex items-center gap-3 p-2">
@@ -116,14 +110,14 @@ export function DashboardContainer() {
                 </div>
               ))}
             </div>
-          ) : recentExpenses.length === 0 ? (
+          ) : transactions.length === 0 ? (
             <div className="px-4 pt-6 text-center">
               <p className="text-[#F1FFF3]/60 text-sm">No recent expenses</p>
             </div>
           ) : (
             <>
               <div className="px-4 flex flex-col gap-2">
-                {recentExpenses.map((expense) => (
+                {transactions.map((expense) => (
                   <button
                     key={expense.id}
                     onClick={() =>
@@ -163,12 +157,15 @@ export function DashboardContainer() {
                     </div>
 
                     <div className="flex-shrink-0">
-                      <p className={`font-bold text-base whitespace-nowrap ${
-                        expense.type === 'income' 
-                          ? 'text-[#00D09E]' 
-                          : 'text-[#FF6B6B]'
-                      }`}>
-                        {expense.type === 'income' ? '' : '-'}{formatCurrency(expense.amount)}
+                      <p
+                        className={`font-bold text-base whitespace-nowrap ${
+                          expense.type === "income"
+                            ? "text-[#00D09E]"
+                            : "text-[#FF6B6B]"
+                        }`}
+                      >
+                        {expense.type === "income" ? "" : "-"}
+                        {formatCurrency(expense.amount)}
                       </p>
                     </div>
                   </button>

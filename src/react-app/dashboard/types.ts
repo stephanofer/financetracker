@@ -127,6 +127,14 @@ export interface Expenses {
   };
 }
 
+export interface Summary {
+  results: Transaction[];
+  total: {
+    total_expenses: number;
+    total_balance: number;
+  };
+}
+
 export type DebtStatus = "activa" | "pagada" | "vencida";
 
 export interface Debt {

@@ -16,8 +16,6 @@ export function TransactionsContainer() {
 
   const transactions: Transaction[] = expensesData?.data.results || [];
 
-  console.log(transactions);
-
   return (
     <div className="flex flex-col h-full bg-[#093030]">
       <header className="px-6 pt-8 pb-6 bg-gradient-to-b from-[#00352F] to-[#093030]">
@@ -84,12 +82,15 @@ export function TransactionsContainer() {
                   </div>
                 </div>
                 <div className="flex-shrink-0">
-                  <p className={`font-bold text-base whitespace-nowrap ${
-                    expense.type === 'income' 
-                      ? 'text-[#00D09E]' 
-                      : 'text-[#FF6B6B]'
-                  }`}>
-                    {expense.type === 'income' ? '' : '-'}{formatCurrency(expense.amount)}
+                  <p
+                    className={`font-bold text-base whitespace-nowrap ${
+                      expense.type === "income"
+                        ? "text-[#00D09E]"
+                        : "text-[#FF6B6B]"
+                    }`}
+                  >
+                    {expense.type === "income" ? "" : "-"}
+                    {formatCurrency(expense.amount)}
                   </p>
                 </div>
               </button>

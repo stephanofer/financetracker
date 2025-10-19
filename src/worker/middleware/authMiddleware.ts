@@ -4,7 +4,6 @@ import { createMiddleware } from "hono/factory";
 import { verify } from "hono/jwt";
 
 export const authMiddleware = createMiddleware<AppContext>(async (c, next) => {
-  console.log("middleware");
   try {
     const token = getCookie(c, "auth_token");
 
@@ -24,7 +23,6 @@ export const authMiddleware = createMiddleware<AppContext>(async (c, next) => {
 
 
     if (!payload || !payload.sub) {
-      console.log("❌ authMiddleware: Payload inválido");
       return c.json(
         {
           success: false,

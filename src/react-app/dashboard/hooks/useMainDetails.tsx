@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { ApiResponse, Expenses, TotalBalance } from "../types";
+import { ApiResponse, Expenses, Summary, TotalBalance } from "../types";
 
 export function useTotalBalance() {
   return useQuery({
@@ -40,9 +40,35 @@ export function useExpenses(options: UseExpensesOptions = {}) {
       if (startDate) params.append("startDate", startDate);
       if (endDate) params.append("endDate", endDate);
 
-      console.log(`/api/transactions/expenses?${params}`);
 
       const response = await fetch(`/api/transactions/expenses?${params}`, {
+        credentials: "include",
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || "Error al obtener los gastos");
+      }
+
+      return response.json();
+    },
+  });
+}
+
+export function useSummary(options: UseExpensesOptions = {}) {
+  const { limit, offset = 0,} = options;
+
+  return useQuery({
+    queryKey: ["summary", limit, offset],
+    queryFn: async (): Promise<ApiResponse<Summary>> => {
+      const params = new URLSearchParams({
+        offset: offset.toString(),
+      });
+
+      if (limit) params.append("limit", limit.toString());
+
+
+      const response = await fetch(`/api/transactions/summary?${params}`, {
         credentials: "include",
       });
 

@@ -1,14 +1,15 @@
-import { ApiResponse, Expenses, TotalBalance } from "@/dashboard/types";
 import { formatCurrency } from "@/dashboard/utils";
 import { ArrowDownRight, ArrowUpRight } from "lucide-react";
 
 interface MainDetailsProps {
-  balanceData: ApiResponse<TotalBalance>;
-  expensesData: ApiResponse<Expenses>;
+  total: {
+    total_balance: number;
+    total_expenses: number;
+  };
 }
-export function MainDetails({ balanceData, expensesData }: MainDetailsProps) {
-  const totalBalance = balanceData?.data.total_balance || 0;
-  const totalExpenses = expensesData?.data.total.total_expenses || 0;
+export function MainDetails({ total }: MainDetailsProps) {
+  const totalBalance = total.total_balance || 0;
+  const totalExpenses = total.total_expenses || 0;
 
   return (
     <>
