@@ -31,7 +31,7 @@ transactions.post("/", async (c) => {
     const date = body["date"] || new Date().toISOString();
     const file = body["file"] || null;
 
-    if (!amount || !accountId || !userId || !type) {
+    if (!amount || !userId || !type) {
       return c.json(
         {
           success: false,
@@ -149,7 +149,9 @@ transactions.post("/", async (c) => {
         .run();
     }
 
-    await updateAccountBalance(c.env.DB, accountId, amount, type as string);
+    if (accountId) {
+      await updateAccountBalance(c.env.DB, accountId, amount, type as string);
+    }
 
     const getTransactionStmt = c.env.DB.prepare(
       `SELECT * FROM transactions WHERE id = ?`
@@ -185,6 +187,7 @@ transactions.post("/", async (c) => {
     );
   }
 });
+
 transactions.get("/summary", async (c) => {
   try {
     const user = c.get("user");

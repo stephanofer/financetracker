@@ -16,7 +16,7 @@ export const TransactionSchema = z.object({
     .refine((val) => parseFloat(val) > 0, "El monto debe ser mayor a 0"),
   categoryId: z.string().min(1, "Debes seleccionar una categoría"),
   subcategoryId: z.string().optional(),
-  accountId: z.string().min(1, "Debes seleccionar una cuenta"),
+  accountId: z.string().optional(),
   description: z.string().max(255).optional(),
   file: z
     .instanceof(FileList)

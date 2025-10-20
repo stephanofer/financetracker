@@ -72,12 +72,15 @@ export function TransactionForm({ handleClose, type }: TransactionFormProps) {
     formData.append("type", type);
     formData.append("description", data.description || "");
     formData.append("date", new Date().toISOString());
-    formData.append("accountId", data.accountId);
     formData.append("categoryId", data.categoryId);
 
+    if (data.accountId) {
+      formData.append("accountId", data.accountId);
+    }
     if (data.subcategoryId) {
       formData.append("subcategoryId", data.subcategoryId);
     }
+
 
     if (data.file) {
       formData.append("file", data.file[0]);
@@ -248,27 +251,27 @@ export function TransactionForm({ handleClose, type }: TransactionFormProps) {
           )}
         />
 
-          <FormField
-            control={form.control}
-            name="file"
-            render={({ field: { value, onChange, ...fieldProps } }) => (
-              <FormItem>
-                <FormLabel>Comprobante (Opcional)</FormLabel>
-                <FormControl>
-                  <FileUpload
-                    value={value ?? null}
-                    onChange={onChange}
-                    {...fieldProps}
-                  />
-                </FormControl>
-                <FormDescription className="text-xs text-slate-400 flex items-center gap-1.5">
-                  <span className="inline-block w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse"></span>
-                  Formatos: JPG, PNG, WEBP, PDF (Máx. 5MB)
-                </FormDescription>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+        <FormField
+          control={form.control}
+          name="file"
+          render={({ field: { value, onChange, ...fieldProps } }) => (
+            <FormItem>
+              <FormLabel>Comprobante (Opcional)</FormLabel>
+              <FormControl>
+                <FileUpload
+                  value={value ?? null}
+                  onChange={onChange}
+                  {...fieldProps}
+                />
+              </FormControl>
+              <FormDescription className="text-xs text-slate-400 flex items-center gap-1.5">
+                <span className="inline-block w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse"></span>
+                Formatos: JPG, PNG, WEBP, PDF (Máx. 5MB)
+              </FormDescription>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
 
         <Button type="submit" className="w-full" disabled={isPending}>
           {isPending ? (
