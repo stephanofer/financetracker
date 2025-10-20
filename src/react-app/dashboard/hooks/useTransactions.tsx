@@ -7,7 +7,7 @@ export function useTransaction() {
 
   return useMutation<ApiResponseTransaction, Error, FormData>({
     mutationFn: async (data: FormData) => {
-      const response = await fetch(`/api/transaction`, {
+      const response = await fetch(`/api/transactions`, {
         method: "POST",
         body: data,
       });
