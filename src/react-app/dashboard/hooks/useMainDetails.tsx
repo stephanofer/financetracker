@@ -92,6 +92,24 @@ export function useTransactions(options: useTransactionsOptions = {}) {
   });
 }
 
+export function useTransaction(id: number) {
+  return useQuery({
+    queryKey: ["transaction", id],
+    queryFn: async (): Promise<ApiResponse<Transaction>> => {
+      const response = await fetch(`/api/transactions/${id}`, {
+        credentials: "include",
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || "Error al obtener la transacción");
+      }
+
+      return response.json();
+    },
+  });
+}
+
 export function useSummary(options: { limit?: number; offset?: number } = {}) {
   const { limit, offset = 0 } = options;
 

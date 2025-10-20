@@ -1,62 +1,18 @@
+import { Spinner } from "@/components/ui/spinner";
+import {
+  useTransaction
+} from "@/dashboard/hooks/useMainDetails";
 import { ArrowLeft, Calendar, FileText, Image, Receipt } from "lucide-react";
 import { useNavigate, useParams } from "react-router";
-import { useEffect, useState } from "react";
-import { Spinner } from "@/components/ui/spinner";
-
-interface TransactionDetail {
-  id: number;
-  type: "income" | "expense" | "debt" | "debt_payment" | "transfer";
-  amount: number;
-  description: string | null;
-  notes: string | null;
-  transaction_date: string;
-  category_name: string | null;
-  category_icon: string | null;
-  category_color: string | null;
-  subcategory_name: string | null;
-  account_name: string | null;
-  account_type: string | null;
-  created_at: string;
-  attachments?: Array<{
-    id: number;
-    file_name: string;
-    original_file_name: string | null;
-    file_size: number | null;
-    mime_type: string | null;
-    file_type: "image" | "pdf" | "document" | "receipt" | "other" | null;
-    r2_url: string | null;
-    description: string | null;
-    uploaded_at: string;
-  }>;
-}
 
 export function TransactionDetailContainer() {
   const navigate = useNavigate();
+
   const { id, from } = useParams();
-  const [transaction, setTransaction] = useState<TransactionDetail | null>(
-    null
-  );
-  const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    const fetchTransactionDetail = async () => {
-      try {
-        const response = await fetch(`/api/transactions/${id}`);
-        const data = await response.json();
-        if (data.success) {
-          setTransaction(data.data);
-        }
-      } catch (error) {
-        console.error("Error fetching transaction:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
+  const { data, isPending } = useTransaction(Number(id));
 
-    if (id) {
-      fetchTransactionDetail();
-    }
-  }, [id]);
+  const transaction = data?.data;
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat("es-PE", {
@@ -106,7 +62,7 @@ export function TransactionDetailContainer() {
     }
   };
 
-  if (isLoading) {
+  if (isPending) {
     return (
       <div className="flex flex-col h-full bg-[#093030] items-center justify-center">
         <Spinner className="w-12 h-12 text-[#F1FFF3]" />
@@ -177,9 +133,7 @@ export function TransactionDetailContainer() {
           <div className="mt-4">
             <p
               className={`text-4xl font-bold ${
-                transaction.type === "expense"
-                  ? "text-[#FF6B6B]"
-                  : "text-white"
+                transaction.type === "expense" ? "text-[#FF6B6B]" : "text-white"
               }`}
             >
               {transaction.type === "expense" ? "-" : "+"}
@@ -325,9 +279,7 @@ export function TransactionDetailContainer() {
                       <div className="mt-3 rounded-lg overflow-hidden">
                         <img
                           src={attachment.r2_url}
-                          alt={
-                            attachment.original_file_name || "Voucher image"
-                          }
+                          alt={attachment.original_file_name || "Voucher image"}
                           className="w-full h-auto"
                         />
                       </div>

@@ -120,7 +120,7 @@ export function DashboardContainer() {
                   <button
                     key={expense.id}
                     onClick={() =>
-                      navigate(`/transaction/${expense.id}/dashboard`)
+                      navigate(`transactions/${expense.id}/dashboard`)
                     }
                     className="flex items-center gap-3 w-full text-left hover:bg-[#0A3A3A]/50 rounded-xl p-2 transition-all duration-200 active:scale-98"
                   >
