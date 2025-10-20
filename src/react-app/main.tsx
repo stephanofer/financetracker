@@ -10,8 +10,9 @@ import { userContext } from "@/contexts/auth";
 import { authMiddleware } from "@/middleware/auth";
 import { loggingMiddleware } from "@/middleware/login";
 import { DashboardLayout } from "@/dashboard/DashboardLayout";
-import { TransactionsContainer } from "@/transactions/TransactionsContainer";
-import { TransactionDetailContainer } from "./transaction-detail/TransactionDetailContainer";
+import { TransactionsContainer } from "@/dashboard/transactions/TransactionsContainer";
+import { TransactionDetailContainer } from "@/dashboard/transactions/TransactionDetailContainer";
+import { DebtsContainer } from "@/dashboard/debts/DebtsContainer";
 
 const router = createBrowserRouter([
   {
@@ -40,6 +41,10 @@ const router = createBrowserRouter([
       {
         path: "transactions/:id/:from",
         Component: TransactionDetailContainer,
+      },
+      {
+        path: "debts",
+        Component: DebtsContainer,
       },
     ],
   },

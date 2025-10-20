@@ -128,7 +128,7 @@ export function BottomNav() {
 
           {/* Layers Button */}
           <button
-            onClick={() => navigate("/debts")}
+            onClick={() => navigate("debts")}
             className="flex items-center justify-center w-14 h-14 text-white/60 hover:text-white hover:scale-105 transition-all duration-200"
           >
             <Layers size={28} strokeWidth={2} />
