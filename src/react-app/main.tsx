@@ -2,8 +2,6 @@ import { HomeContainer } from "@//home/HomeContainer";
 import { Toaster } from "@/components/ui/sonner";
 import { DashboardContainer } from "@/dashboard/DashboardContainer";
 import "@/index.css";
-import { TransactionDetailContainer } from "@/transaction-detail/TransactionDetailContainer";
-import { TransactionsContainer } from "@/transactions/TransactionsContainer";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
@@ -11,6 +9,9 @@ import { createBrowserRouter, RouterProvider } from "react-router";
 import { userContext } from "@/contexts/auth";
 import { authMiddleware } from "@/middleware/auth";
 import { loggingMiddleware } from "@/middleware/login";
+import { DashboardLayout } from "@/dashboard/DashboardLayout";
+import { TransactionsContainer } from "@/transactions/TransactionsContainer";
+import { TransactionDetailContainer } from "./transaction-detail/TransactionDetailContainer";
 
 const router = createBrowserRouter([
   {
@@ -21,29 +22,26 @@ const router = createBrowserRouter([
   {
     path: "/dashboard",
     middleware: [authMiddleware],
-    Component: DashboardContainer,
+    Component: DashboardLayout,
+    id: "dashboard",
     loader: async function dashboardLoader({ context }) {
       const user = context.get(userContext);
       return user;
     },
     children: [
       {
-        path: "settings",
-        element: <div>Settings</div>,
+        index: true,
+        Component: DashboardContainer,
       },
       {
-        path: "profile",
-        element: <div>Profile</div>,
+        path: "transactions",
+        Component: TransactionsContainer,
+      },
+      {
+        path: "transactions/:id/:from",
+        Component: TransactionDetailContainer,
       },
     ],
-  },
-  {
-    path: "transactions",
-    element: <TransactionsContainer />,
-  },
-  {
-    path: "transaction/:id/:from",
-    element: <TransactionDetailContainer />,
   },
 ]);
 

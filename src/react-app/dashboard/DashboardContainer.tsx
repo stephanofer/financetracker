@@ -1,18 +1,17 @@
 import { Skeleton } from "@/components/ui/skeleton";
-import { BottomNav } from "@/dashboard/components/BottomNav";
 import { Greeting } from "@/dashboard/components/Greeting";
 import { useSummary } from "@/dashboard/hooks/useMainDetails";
 import { User } from "@/dashboard/types";
 import { formatCurrency, formatDate } from "@/dashboard/utils";
 import { ArrowUpRight, Bell, Check } from "lucide-react";
-import { useLoaderData, useNavigate } from "react-router";
+import { useNavigate, useRouteLoaderData } from "react-router";
 import { MainDetails } from "./components/home/MainDetails";
 import { SavingsCard } from "./components/home/SavingsCard";
 
 export function DashboardContainer() {
   const navigate = useNavigate();
 
-  const user = useLoaderData() as User;
+  const user = useRouteLoaderData("dashboard") as User;
 
   const { data: summaryData, isPending: isLoadingSummary } = useSummary({
     limit: 10,
@@ -174,7 +173,7 @@ export function DashboardContainer() {
 
               <div className="px-4 pb-6 pt-4">
                 <button
-                  onClick={() => navigate("/transactions")}
+                  onClick={() => navigate("/dashboard/transactions")}
                   className="w-full bg-gradient-to-r from-[#00D09E] to-[#00B589] hover:from-[#00B589] hover:to-[#009973] transition-all duration-300 text-[#093030] font-bold py-2 px-4 rounded-xl shadow-lg hover:shadow-xl active:scale-95 transform flex items-center justify-center gap-2"
                 >
                   <span>Ver más transacciones</span>
@@ -186,7 +185,6 @@ export function DashboardContainer() {
         </div>
       </div>
 
-      <BottomNav />
     </div>
   );
 }

@@ -1,20 +1,19 @@
 import { ArrowLeft } from "lucide-react";
 import { useNavigate } from "react-router";
-import { useExpenses } from "@/dashboard/hooks/useMainDetails";
+import { useTransactions } from "@/dashboard/hooks/useMainDetails";
 import { Spinner } from "@/components/ui/spinner";
 import { formatCurrency, formatDate } from "@/dashboard/utils";
-import { Transaction } from "@/dashboard/types";
 
 export function TransactionsContainer() {
   const navigate = useNavigate();
-  // const userId = 1;
 
-  const { data: expensesData, isLoading } = useExpenses({
+  const { data: expensesData, isPending } = useTransactions({
     limit: 100,
     offset: 0,
   });
 
-  const transactions: Transaction[] = expensesData?.data.results || [];
+  const transactions = expensesData?.data || [];
+  console.log(transactions);
 
   return (
     <div className="flex flex-col h-full bg-[#093030]">
@@ -33,7 +32,7 @@ export function TransactionsContainer() {
       </header>
 
       <div className="flex-1 overflow-y-auto px-6 py-4">
-        {isLoading ? (
+        {isPending ? (
           <div className="flex items-center justify-center py-8">
             <Spinner className="w-8 h-8 text-[#F1FFF3]" />
           </div>
@@ -47,7 +46,7 @@ export function TransactionsContainer() {
               <button
                 key={expense.id}
                 onClick={() =>
-                  navigate(`/transaction/${expense.id}/transactions`)
+                  navigate(`${expense.id}/transactions`)
                 }
                 className="flex items-center gap-3 bg-[#0A3A3A] hover:bg-[#0D4444] rounded-xl p-4 transition-all duration-200 active:scale-95 w-full text-left"
               >

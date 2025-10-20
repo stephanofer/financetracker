@@ -262,11 +262,11 @@ transactions.get("/summary", async (c) => {
   }
 });
 
-transactions.get("/:type", async (c) => {
+transactions.get("/", async (c) => {
   try {
-    const type = c.req.param("type");
     const user = c.get("user");
     const userId = user.id;
+    const type = c.req.query("type");
     const limit = c.req.query("limit");
     const offset = c.req.query("offset") || "0";
     const startDate = c.req.query("startDate");
@@ -289,10 +289,9 @@ transactions.get("/:type", async (c) => {
     `;
     const params: (string | number)[] = [userId];
 
-    if (type === "expenses") {
-      query += " AND t.type = 'expense'";
-    } else if (type === "incomes") {
-      query += " AND t.type = 'income'";
+    if (type === "expense" || type === "income") {
+      query += " AND t.type = ?";
+      params.push(type);
     }
 
     if (startDate) {
@@ -321,11 +320,11 @@ transactions.get("/:type", async (c) => {
       count: results.length,
     });
   } catch (error) {
-    console.error("Error al obtener gastos:", error);
+    console.error("Error al obtener transacciones:", error);
     return c.json(
       {
         success: false,
-        error: "Error al obtener los gastos",
+        error: "Error al obtener las transacciones",
       },
       500
     );
