@@ -135,11 +135,25 @@ export interface Summary {
   };
 }
 
-export type DebtStatus = "activa" | "pagada" | "vencida";
+export type DebtStatus = "active" | "paid" | "overdue";
+export type DebtType = "person" | "institution";
+export type InstallmentStatus = "pending" | "partial" | "paid" | "overdue";
+
+export interface DebtInstallmentSummary {
+  total: number;
+  pending: number;
+  overdue: number;
+  paid: number;
+  partial: number;
+  totalAmount: number;
+  paidAmount: number;
+  nextDueDate: string | null;
+}
 
 export interface Debt {
   id: number;
   name: string;
+  type: DebtType;
   creditor: string | null;
   originalAmount: number;
   remainingAmount: number;
@@ -150,6 +164,8 @@ export interface Debt {
   notes: string | null;
   createdAt: string;
   updatedAt: string;
+  hasInstallments: boolean;
+  installments: DebtInstallmentSummary | null;
   totals: {
     totalPaid: number;
     pendingAmount: number;
@@ -195,6 +211,21 @@ export interface DebtPayment {
   accountName: string | null;
 }
 
+export interface DebtInstallment {
+  id: number;
+  debtId: number;
+  installmentNumber: number;
+  amount: number;
+  dueDate: string;
+  status: InstallmentStatus;
+  paidAmount: number;
+  paidDate: string | null;
+  transactionId: number | null;
+  notes: string | null;
+  createdAt: string;
+  transactionDescription: string | null;
+}
+
 export interface DebtListResponse {
   summary: DebtSummary;
   debts: Debt[];
@@ -203,4 +234,5 @@ export interface DebtListResponse {
 export interface DebtDetailResponse {
   debt: Debt;
   payments: DebtPayment[];
+  installments: DebtInstallment[];
 }
