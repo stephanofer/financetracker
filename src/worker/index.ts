@@ -6,6 +6,7 @@ import transactions from "./routes/transactions";
 import categories from "./routes/categories";
 import subcategories from "./routes/subcategories";
 import accounts from "./routes/accounts";
+import debts from "./routes/debts";
 
 const app = new Hono<AppContext>().basePath("/api");
 
@@ -23,5 +24,6 @@ app.route("/transactions", transactions);
 app.route("/categories", categories);
 app.route("/subcategories", subcategories);
 app.route("/accounts", accounts);
+app.route("/debts", debts);
 
 export default app;

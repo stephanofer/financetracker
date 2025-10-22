@@ -24,11 +24,16 @@ export type User = {
   is_active: number;
 };
 
-type DebtRow = {
+export type Debt = {
   id: number;
-  user_id: number;
   name: string;
-  type: "person" | "institution" | "credit_card" | "loan" | "mortgage" | "other";
+  type:
+    | "person"
+    | "institution"
+    | "credit_card"
+    | "loan"
+    | "mortgage"
+    | "other";
   original_amount: number;
   remaining_amount: number;
   interest_rate: number | null;
@@ -38,10 +43,10 @@ type DebtRow = {
   notes: string | null;
   created_at: string;
   updated_at: string;
-  has_installments:  boolean;
+  has_installments: boolean;
 };
 
-export type DebtRowWithAggregates = DebtRow & {
+export type DebtRowWithAggregates = Debt & {
   total_paid: number | null;
   payments_count: number | null;
   last_payment_date: string | null;
@@ -53,22 +58,5 @@ export type DebtRowWithAggregates = DebtRow & {
   total_installment_amount: number | null;
   total_paid_installments: number | null;
   next_installment_due_date: string | null;
-};
-
-export type DebtsSummary = {
-  totalDebts: number;
-  activeDebts: number;
-  overdueDebts: number;
-  paidDebts: number;
-  totalOriginalAmount: number;
-  totalRemainingAmount: number;
-  totalPaidAmount: number;
-  nextDueDebt: {
-    id: number;
-    name: string;
-    dueDate: string;
-    remainingAmount: number;
-    daysUntilDue: number | null;
-  } | null;
 };
 

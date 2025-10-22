@@ -135,104 +135,52 @@ export interface Summary {
   };
 }
 
-export type DebtStatus = "active" | "paid" | "overdue";
+export type DebtStatus = "active" | "paid" | "overdue" | "partially_paid";
 export type DebtType = "person" | "institution";
-export type InstallmentStatus = "pending" | "partial" | "paid" | "overdue";
 
-export interface DebtInstallmentSummary {
-  total: number;
-  pending: number;
-  overdue: number;
-  paid: number;
-  partial: number;
-  totalAmount: number;
-  paidAmount: number;
-  nextDueDate: string | null;
-}
 
-export interface Debt {
+export type Debt = {
   id: number;
   name: string;
-  type: DebtType;
-  creditor: string | null;
-  originalAmount: number;
-  remainingAmount: number;
-  interestRate: number;
-  startDate: string;
-  dueDate: string | null;
-  status: DebtStatus;
+  type:
+    | "person"
+    | "institution"
+    | "credit_card"
+    | "loan"
+    | "mortgage"
+    | "other";
+  original_amount: number;
+  remaining_amount: number;
+  interest_rate: number | null;
+  start_date: string;
+  due_date: string | null;
+  status: "active" | "paid" | "overdue" | null;
   notes: string | null;
-  createdAt: string;
-  updatedAt: string;
-  hasInstallments: boolean;
-  installments: DebtInstallmentSummary | null;
-  totals: {
-    totalPaid: number;
-    pendingAmount: number;
-    paidPercentage: number;
-    remainingPercentage: number;
-    paymentsCount: number;
-    lastPaymentDate: string | null;
+  created_at: string;
+  updated_at: string;
+  has_installments: boolean;
+};
+
+export type DebtRowWithAggregates = Debt & {
+  payments: {
+    total: number;
+    count: number;
+    last_date: string | null;
   };
-  flags: {
-    isOverdue: boolean;
-    isPaid: boolean;
-    daysUntilDue: number | null;
+  installments: {
+    total: number;
+    pending: number;
+    overdue: number;
+    paid: number;
+    partial: number;
+    next_due_date: string | null;
   };
-}
+};
 
-export interface DebtSummary {
-  totalDebts: number;
-  activeDebts: number;
-  overdueDebts: number;
-  paidDebts: number;
-  totalOriginalAmount: number;
-  totalRemainingAmount: number;
-  totalPaidAmount: number;
-  nextDueDebt: {
-    id: number;
-    name: string;
-    dueDate: string;
-    remainingAmount: number;
-    daysUntilDue: number | null;
-  } | null;
-}
-
-export interface DebtPayment {
-  id: number;
-  debtId: number;
-  transactionId: number;
-  amount: number;
-  paymentDate: string;
-  notes: string | null;
-  createdAt: string;
-  description: string;
-  accountId: number | null;
-  accountName: string | null;
-}
-
-export interface DebtInstallment {
-  id: number;
-  debtId: number;
-  installmentNumber: number;
-  amount: number;
-  dueDate: string;
-  status: InstallmentStatus;
-  paidAmount: number;
-  paidDate: string | null;
-  transactionId: number | null;
-  notes: string | null;
-  createdAt: string;
-  transactionDescription: string | null;
-}
-
-export interface DebtListResponse {
-  summary: DebtSummary;
-  debts: Debt[];
-}
-
-export interface DebtDetailResponse {
-  debt: Debt;
-  payments: DebtPayment[];
-  installments: DebtInstallment[];
-}
+export type DebtsApiResponse = {
+  summary: {
+    total_pending_debt: number;
+    total_paid: number;
+  };
+  debts: DebtRowWithAggregates[];
+};

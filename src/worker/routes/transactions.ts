@@ -11,10 +11,13 @@ const transactions = new Hono<AppContext>();
 
 transactions.get("/summary", async (c) => {
   try {
+    console.log("[GET /summary] Inicio endpoint");
     const user = c.get("user");
+    console.log("[GET /summary] Usuario:", user);
     const userId = user.id;
     const limit = c.req.query("limit");
     const offset = c.req.query("offset") || "0";
+    console.log("[GET /summary] Query params:", { limit, offset });
 
     let query = `
       SELECT 
@@ -39,9 +42,12 @@ transactions.get("/summary", async (c) => {
       query += " LIMIT ? OFFSET ?";
       params.push(parseInt(limit), parseInt(offset));
     }
+    console.log("[GET /summary] SQL Query:", query);
+    console.log("[GET /summary] SQL Params:", params);
 
     const stmt = c.env.DB.prepare(query);
     const { results } = await stmt.bind(...params).all();
+    console.log("[GET /summary] Resultados de transacciones:", results);
 
     // Obtener el total de gastos (expense) del usuario
     const totalStmt = c.env.DB.prepare(
@@ -55,6 +61,7 @@ transactions.get("/summary", async (c) => {
       total_expenses: number | null;
       total_count: number;
     }>();
+    console.log("[GET /summary] Total gastos:", totalResult);
 
     const balanceStmt = c.env.DB.prepare(
       `SELECT SUM(balance) as total_balance FROM accounts WHERE user_id = ? AND is_active = 1`
@@ -62,8 +69,9 @@ transactions.get("/summary", async (c) => {
     const balanceResult = await balanceStmt
       .bind(userId)
       .first<{ total_balance: number | null }>();
+    console.log("[GET /summary] Total balance:", balanceResult);
 
-    return c.json({
+    const response = {
       success: true,
       data: {
         total: {
@@ -73,9 +81,11 @@ transactions.get("/summary", async (c) => {
         results,
       },
       count: results.length,
-    });
+    };
+    console.log("[GET /summary] Response:", response);
+    return c.json(response);
   } catch (error) {
-    console.error("Error al obtener gastos:", error);
+    console.error("[GET /summary] Error al obtener gastos:", error);
     return c.json(
       {
         success: false,
@@ -88,8 +98,11 @@ transactions.get("/summary", async (c) => {
 
 transactions.post("/", async (c) => {
   try {
+    console.log("[POST /] Inicio endpoint");
     const body = await c.req.parseBody();
+    console.log("[POST /] Body recibido:", body);
     const user = c.get("user");
+    console.log("[POST /] Usuario:", user);
     const userId = user.id;
     const amount = body["amount"] ? parseFloat(body["amount"] as string) : null;
     const categoryId = body["categoryId"]
@@ -106,8 +119,10 @@ transactions.post("/", async (c) => {
     const notes = body["notes"] || null;
     const date = body["date"] || new Date().toISOString();
     const file = body["file"] || null;
+    console.log("[POST /] Datos parseados:", { amount, categoryId, subcategoryId, accountId, description, type, notes, date, file });
 
     if (!amount || !userId || !type) {
+      console.log("[POST /] Error: amount, accountId, userId y type son requeridos");
       return c.json(
         {
           success: false,
@@ -122,6 +137,7 @@ transactions.post("/", async (c) => {
       file instanceof File &&
       !ALLOWED_FILE_TYPES.includes(file.type)
     ) {
+      console.log("[POST /] Error: Tipo de archivo no permitido", file);
       return c.json(
         {
           error: "Tipo de archivo no permitido",
@@ -132,6 +148,7 @@ transactions.post("/", async (c) => {
     }
 
     if (file && file instanceof File && file.size > MAX_FILE_SIZE) {
+      console.log("[POST /] Error: Archivo muy grande", file);
       return c.json(
         {
           error: "Archivo muy grande",
@@ -150,6 +167,7 @@ transactions.post("/", async (c) => {
       const randomString = Math.random().toString(36).substring(2, 15);
       const fileExtension = file.name.split(".").pop();
       r2Key = `uploads/${timestamp}-${randomString}.${fileExtension}`;
+      console.log("[POST /] Subiendo archivo a R2:", { r2Key, file });
 
       await c.env.BUCKET.put(r2Key, file.stream(), {
         httpMetadata: {
@@ -163,6 +181,7 @@ transactions.post("/", async (c) => {
 
       r2Url = `https://cdnfintracker.stephanofer.com/${r2Key}`;
       uploadedFile = file;
+      console.log("[POST /] Archivo subido. r2Url:", r2Url);
     }
 
     const stmt = c.env.DB.prepare(
@@ -170,6 +189,7 @@ transactions.post("/", async (c) => {
        (user_id, type, amount, category_id, subcategory_id, account_id, description, notes, transaction_date) 
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
     );
+    console.log("[POST /] Ejecutando INSERT de transacción");
 
     const result = await stmt
       .bind(
@@ -184,8 +204,10 @@ transactions.post("/", async (c) => {
         date
       )
       .run();
+    console.log("[POST /] Resultado INSERT:", result);
 
     const transactionId = result.meta.last_row_id;
+    console.log("[POST /] transactionId:", transactionId);
 
     if (uploadedFile && r2Key) {
       const fileType = uploadedFile.type.startsWith("image/")
@@ -193,6 +215,7 @@ transactions.post("/", async (c) => {
         : uploadedFile.type === "application/pdf"
         ? "pdf"
         : "other";
+      console.log("[POST /] Insertando attachment en DB");
 
       const attachmentStmt = c.env.DB.prepare(
         `INSERT INTO attachments 
@@ -213,25 +236,32 @@ transactions.post("/", async (c) => {
           description || null
         )
         .run();
+      console.log("[POST /] Attachment insertado");
     }
 
     if (accountId) {
+      console.log("[POST /] Actualizando balance de cuenta", { accountId, userId, amount, type });
       await updateAccountBalance(c.env.DB, accountId, userId, amount, type);
+      console.log("[POST /] Balance actualizado");
     }
 
     const getTransactionStmt = c.env.DB.prepare(
       `SELECT * FROM transactions WHERE id = ?`
     );
     const transaction = await getTransactionStmt.bind(transactionId).first();
+    console.log("[POST /] Transacción final:", transaction);
 
-    return c.json({
+    const response = {
       success: true,
       data: {
         ...transaction,
       },
-    });
+    };
+    console.log("[POST /] Response:", response);
+    return c.json(response);
   } catch (error) {
     if (error instanceof Error && error.message.includes("boundary")) {
+      console.log("[POST /] Error boundary:", error);
       return c.json(
         {
           success: false,
@@ -242,7 +272,7 @@ transactions.post("/", async (c) => {
         400
       );
     }
-
+    console.log("[POST /] Error general:", error);
     return c.json(
       {
         success: false,
@@ -256,13 +286,16 @@ transactions.post("/", async (c) => {
 
 transactions.get("/", async (c) => {
   try {
+    console.log("[GET /] Inicio endpoint");
     const user = c.get("user");
+    console.log("[GET /] Usuario:", user);
     const userId = user.id;
     const type = c.req.query("type");
     const limit = c.req.query("limit");
     const offset = c.req.query("offset") || "0";
     const startDate = c.req.query("startDate");
     const endDate = c.req.query("endDate");
+    console.log("[GET /] Query params:", { type, limit, offset, startDate, endDate });
 
     let query = `
       SELECT 
@@ -302,17 +335,22 @@ transactions.get("/", async (c) => {
       query += " LIMIT ? OFFSET ?";
       params.push(parseInt(limit), parseInt(offset));
     }
+    console.log("[GET /] SQL Query:", query);
+    console.log("[GET /] SQL Params:", params);
 
     const stmt = c.env.DB.prepare(query);
     const { results } = await stmt.bind(...params).all();
+    console.log("[GET /] Resultados:", results);
 
-    return c.json({
+    const response = {
       success: true,
       data: results,
       count: results.length,
-    });
+    };
+    console.log("[GET /] Response:", response);
+    return c.json(response);
   } catch (error) {
-    console.error("Error al obtener transacciones:", error);
+    console.error("[GET /] Error al obtener transacciones:", error);
     return c.json(
       {
         success: false,
@@ -325,8 +363,11 @@ transactions.get("/", async (c) => {
 
 transactions.get("/:id", async (c) => {
   try {
+    console.log("[GET /:id] Inicio endpoint");
     const transactionId = c.req.param("id");
+    console.log("[GET /:id] transactionId:", transactionId);
     const user = c.get("user");
+    console.log("[GET /:id] Usuario:", user);
     const userId = user.id;
 
     const transactionStmt = c.env.DB.prepare(
@@ -348,8 +389,10 @@ transactions.get("/:id", async (c) => {
     const transaction = await transactionStmt
       .bind(transactionId, userId)
       .first();
+    console.log("[GET /:id] Transacción:", transaction);
 
     if (!transaction) {
+      console.log("[GET /:id] Transacción no encontrada");
       return c.json(
         {
           success: false,
@@ -366,18 +409,20 @@ transactions.get("/:id", async (c) => {
     const { results: attachments } = await attachmentsStmt
       .bind(transactionId)
       .all();
+    console.log("[GET /:id] Attachments:", attachments);
 
     const transactionWithAttachments = {
       ...transaction,
       attachments: attachments,
     };
+    console.log("[GET /:id] Response:", transactionWithAttachments);
 
     return c.json({
       success: true,
       data: transactionWithAttachments,
     });
   } catch (error) {
-    console.error("Error al obtener detalles de la transacción:", error);
+    console.error("[GET /:id] Error al obtener detalles de la transacción:", error);
     return c.json(
       {
         success: false,
@@ -389,10 +434,14 @@ transactions.get("/:id", async (c) => {
 });
 
 transactions.delete("/:id", async (c) => {
+  console.log("[DELETE /:id] Inicio endpoint");
   const transactionIdParam = c.req.param("id");
+  console.log("[DELETE /:id] transactionIdParam:", transactionIdParam);
   const transactionId = Number.parseInt(transactionIdParam, 10);
+  console.log("[DELETE /:id] transactionId:", transactionId);
 
   if (!Number.isInteger(transactionId)) {
+    console.log("[DELETE /:id] Error: ID de transacción inválido");
     return c.json(
       {
         success: false,
@@ -403,6 +452,7 @@ transactions.delete("/:id", async (c) => {
   }
 
   const user = c.get("user");
+  console.log("[DELETE /:id] Usuario:", user);
 
   const transactionStmt = c.env.DB.prepare(
     `SELECT id, user_id, type, amount, account_id
@@ -417,8 +467,10 @@ transactions.delete("/:id", async (c) => {
     amount: number;
     account_id: number;
   }>();
+  console.log("[DELETE /:id] Transacción:", transaction);
 
   if (!transaction) {
+    console.log("[DELETE /:id] Transacción no encontrada");
     return c.json(
       {
         success: false,
@@ -445,6 +497,7 @@ transactions.delete("/:id", async (c) => {
   const { results: attachments } = await attachmentsStmt
     .bind(transactionId)
     .all<{ id: number; r2_key: string | null }>();
+  console.log("[DELETE /:id] Attachments:", attachments);
 
   const batchQueries = [];
 
@@ -455,6 +508,7 @@ transactions.delete("/:id", async (c) => {
     Number(transaction.amount),
     transaction.type
   );
+  console.log("[DELETE /:id] revertStmt:", revertStmt);
 
   if (revertStmt) {
     batchQueries.push(revertStmt);
@@ -471,12 +525,15 @@ transactions.delete("/:id", async (c) => {
       `DELETE FROM transactions WHERE id = ? AND user_id = ?`
     ).bind(transactionId, user.id)
   );
+  console.log("[DELETE /:id] batchQueries:", batchQueries);
 
   try {
     const results = await c.env.DB.batch(batchQueries);
+    console.log("[DELETE /:id] batch results:", results);
 
     const failed = results.find((r) => !r.success);
     if (failed) {
+      console.log("[DELETE /:id] Error: fallo en la base de datos", failed);
       return c.json(
         {
           success: false,
@@ -488,6 +545,7 @@ transactions.delete("/:id", async (c) => {
 
     const deleteResult = results[results.length - 1];
     if (deleteResult.meta.changes === 0) {
+      console.log("[DELETE /:id] Error: no encontrada o sin cambios");
       return c.json(
         {
           success: false,
@@ -498,7 +556,7 @@ transactions.delete("/:id", async (c) => {
       );
     }
   } catch (error) {
-    console.error("Error al eliminar transacción:", error);
+    console.error("[DELETE /:id] Error al eliminar transacción:", error);
     return c.json(
       {
         success: false,
@@ -513,9 +571,10 @@ transactions.delete("/:id", async (c) => {
       if (attachment.r2_key) {
         try {
           await c.env.BUCKET.delete(attachment.r2_key);
+          console.log(`[DELETE /:id] Archivo R2 eliminado para attachment ${attachment.id}`);
         } catch (deleteError) {
           console.error(
-            `Error al eliminar archivo de R2 para attachment ${attachment.id}:`,
+            `[DELETE /:id] Error al eliminar archivo de R2 para attachment ${attachment.id}:`,
             deleteError
           );
         }
@@ -523,6 +582,7 @@ transactions.delete("/:id", async (c) => {
     }
   }
 
+  console.log("[DELETE /:id] Transacción eliminada correctamente");
   return c.json({
     success: true,
     message: "Transacción eliminada correctamente",

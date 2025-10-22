@@ -89,17 +89,24 @@ CREATE TABLE accounts (
     FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
 );
 
-INSERT INTO accounts (
-    user_id,
-    name,
-    type,
-    color,
-    icon
-) VALUES
+INSERT INTO
+    accounts (user_id, name, type, color, icon)
+VALUES
     (1, 'Efectivo', 'cash', '#FFD166', '💵'),
     (1, 'Banco BCP', 'bank', '#06D6A0', '🏦'),
-    (1, 'Tarjeta de Crédito', 'credit', '#EF476F', '💳'),
+    (
+        1,
+        'Tarjeta de Crédito',
+        'credit',
+        '#EF476F',
+        '💳'
+    ),
     (1, 'Ahorros', 'savings', '#118AB2', '💰');
+
+INSERT INTO
+    accounts (user_id, name, type, color, icon)
+VALUES
+    (1, 'Yape', 'debit', '#9B5DE5', '📱');
 
 CREATE INDEX idx_accounts_user_id ON accounts (user_id);
 
@@ -509,6 +516,28 @@ VALUES
     ),
     (3, 'Hobbies', 5, 1, '2025-10-07 04:32:53');
 
+INSERT INTO
+    subcategories (
+        category_id,
+        name,
+        order_index,
+        is_active,
+        created_at
+    )
+VALUES
+    (1, 'Mercado', 6, 1, '2025-10-07 04:32:54');
+
+INSERT INTO
+    subcategories (
+        category_id,
+        name,
+        order_index,
+        is_active,
+        created_at
+    )
+VALUES
+    (1, 'Bodega', 7, 1, '2025-10-07 04:32:54');
+
 CREATE INDEX idx_subcategories_category_id ON subcategories (category_id);
 
 CREATE TABLE transactions (
@@ -526,7 +555,7 @@ CREATE TABLE transactions (
     amount DECIMAL(15, 2) NOT NULL,
     category_id INTEGER,
     subcategory_id INTEGER,
-    account_id INTEGER NOT NULL,
+    account_id INTEGER,
     description TEXT,
     notes TEXT,
     transaction_date DATE NOT NULL,
@@ -590,15 +619,16 @@ CREATE TABLE debts (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     user_id INTEGER NOT NULL,
     name TEXT NOT NULL,
-    creditor TEXT, -- persona o institución
+    type TEXT NOT NULL CHECK (type IN ('person', 'institution', 'credit_card', 'loan', 'mortgage', 'other')),
     original_amount DECIMAL(15, 2) NOT NULL,
     remaining_amount DECIMAL(15, 2) NOT NULL,
-    interest_rate DECIMAL(5, 2) DEFAULT 0.00, -- porcentaje
+    interest_rate DECIMAL(5, 2) DEFAULT 0.00,
     start_date DATE NOT NULL,
     due_date DATE,
     status TEXT DEFAULT 'active' CHECK (status IN ('active', 'paid', 'overdue')),
     notes TEXT,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    has_installments BOOLEAN DEFAULT 0, -- Flag para saber si usa cuotas
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
 );
@@ -609,19 +639,29 @@ CREATE INDEX idx_debts_status ON debts (status);
 
 CREATE INDEX idx_debts_due_date ON debts (due_date);
 
-CREATE TABLE debt_payments (
+CREATE TABLE debt_installments (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     debt_id INTEGER NOT NULL,
-    transaction_id INTEGER NOT NULL,
+    installment_number INTEGER NOT NULL, -- Cuota #1, #2, etc.
     amount DECIMAL(15, 2) NOT NULL,
-    payment_date DATE NOT NULL,
+    due_date DATE NOT NULL,
+    status TEXT DEFAULT 'pending' CHECK (
+        status IN ('pending', 'paid', 'overdue', 'partial')
+    ),
+    paid_amount DECIMAL(15, 2) DEFAULT 0.00,
+    paid_date DATE,
+    transaction_id INTEGER, -- Referencia al pago
     notes TEXT,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (debt_id) REFERENCES debts (id) ON DELETE CASCADE,
-    FOREIGN KEY (transaction_id) REFERENCES transactions (id) ON DELETE CASCADE
+    FOREIGN KEY (transaction_id) REFERENCES transactions (id) ON DELETE SET NULL
 );
 
-CREATE INDEX idx_debt_payments_debt_id ON debt_payments (debt_id);
+CREATE INDEX idx_debt_installments_debt_id ON debt_installments (debt_id);
+
+CREATE INDEX idx_debt_installments_due_date ON debt_installments (due_date);
+
+CREATE INDEX idx_debt_installments_status ON debt_installments (status);
 
 CREATE TABLE budgets (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -644,4 +684,3 @@ CREATE TABLE budgets (
 CREATE INDEX idx_budgets_user_id ON budgets (user_id);
 
 CREATE INDEX idx_budgets_dates ON budgets (start_date, end_date);
-
