@@ -46,22 +46,17 @@ accounts.get("/", async (c) => {
 accounts.get("/:id", async (c) => {
   try {
     const id = c.req.param("id");
-    const userId = c.req.query("userId");
+    const user = c.get("user");
+    const userId = user.id;
+    const offset = parseInt(c.req.query("offset") || "0", 10);
+    const limit = parseInt(c.req.query("limit") || "10", 10);
 
-    if (!userId) {
-      return c.json(
-        {
-          success: false,
-          error: "El parámetro userId es requerido",
-        },
-        400
-      );
-    }
-
+    // Obtener la cuenta
     const stmt = c.env.DB.prepare(
       "SELECT * FROM accounts WHERE id = ? AND user_id = ? AND is_active = 1"
     );
     const result = await stmt.bind(id, userId).first<Account>();
+    console.log(result);
 
     if (!result) {
       return c.json(
@@ -72,9 +67,26 @@ accounts.get("/:id", async (c) => {
         404
       );
     }
+
+    // Obtener las transacciones de la cuenta
+    const txStmt = c.env.DB.prepare(
+      `SELECT * FROM transactions 
+        WHERE account_id = ? AND user_id = ? 
+        ORDER BY transaction_date DESC, created_at DESC 
+        LIMIT ? OFFSET ?`
+    );
+    const { results: transactions } = await txStmt
+      .bind(id, userId, limit, offset)
+      .all();
+
+      console.log(transactions);
+
     return c.json({
       success: true,
-      data: result,
+      data: {
+        result,
+        transactions,
+      },
     });
   } catch (error) {
     console.error("Error al obtener cuenta:", error);

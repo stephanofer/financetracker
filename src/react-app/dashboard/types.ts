@@ -1,4 +1,5 @@
 export type ActionType = "expense" | "income" | null;
+export type ActionType2 = "income" | "expense" | "debt" | "debt_payment" | "transfer" | null;
 
 export interface Category {
   id: number;
