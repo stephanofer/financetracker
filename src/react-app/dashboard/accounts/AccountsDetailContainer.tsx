@@ -1,6 +1,6 @@
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAccount } from "@/dashboard/accounts/hooks/useAccounts";
-import { formatCurrency } from "@/dashboard/utils";
+import { formatCurrency } from "@/dashboard/utils/utils";
 import {
   ArrowDownLeft,
   ArrowLeft,
@@ -13,7 +13,7 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import { useNavigate, useParams } from "react-router";
-import { ActionType2 } from "../types";
+import { ActionType2 } from "../utils/types";
 
 export function AccountsDetailContainer() {
   const { id } = useParams();

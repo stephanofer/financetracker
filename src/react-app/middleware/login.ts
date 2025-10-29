@@ -1,4 +1,4 @@
-import { ApiResponse, User } from "@/dashboard/types";
+import { ApiResponse, User } from "@/dashboard/utils/types";
 import { MiddlewareFunction, redirect } from "react-router";
 
 export const loggingMiddleware: MiddlewareFunction = async (_context, next) => {

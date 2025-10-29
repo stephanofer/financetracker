@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { LoginFormData } from "@/home/schems/LoginSchema";
-import { ApiResponse, User } from "@/dashboard/types";
+import { ApiResponse, User } from "@/dashboard/utils/types";
 
 async function loginUser(
   credentials: LoginFormData

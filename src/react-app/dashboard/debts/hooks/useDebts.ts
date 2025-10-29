@@ -1,4 +1,4 @@
-import { ApiResponse, DebtsApiResponse } from "@/dashboard/types";
+import { ApiResponse, DebtsApiResponse } from "@/dashboard/utils/types";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 export function useDebts() {

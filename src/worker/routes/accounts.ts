@@ -1,6 +1,5 @@
 import { Hono } from "hono";
-import { AppContext } from "../types";
-import { Account } from "@/react/dashboard/types";
+import { Account, AppContext, Transaction } from "../types";
 
 const accounts = new Hono<AppContext>();
 
@@ -26,10 +25,20 @@ accounts.get("/", async (c) => {
     );
     const { results } = await stmt.bind(userId).all<Account>();
 
+    const filteredResults = results.map((account) => ({
+      id: account.id,
+      name: account.name,
+      type: account.type,
+      balance: account.balance,
+      currency: account.currency,
+      color: account.color,
+      icon: account.icon,
+    }));
+
     return c.json({
       success: true,
-      data: results,
-      count: results.length,
+      data: filteredResults,
+      count: filteredResults.length,
     });
   } catch (error) {
     console.error("Error al obtener cuentas:", error);
@@ -51,12 +60,10 @@ accounts.get("/:id", async (c) => {
     const offset = parseInt(c.req.query("offset") || "0", 10);
     const limit = parseInt(c.req.query("limit") || "10", 10);
 
-    // Obtener la cuenta
     const stmt = c.env.DB.prepare(
       "SELECT * FROM accounts WHERE id = ? AND user_id = ? AND is_active = 1"
     );
     const result = await stmt.bind(id, userId).first<Account>();
-    console.log(result);
 
     if (!result) {
       return c.json(
@@ -68,7 +75,6 @@ accounts.get("/:id", async (c) => {
       );
     }
 
-    // Obtener las transacciones de la cuenta
     const txStmt = c.env.DB.prepare(
       `SELECT * FROM transactions 
         WHERE account_id = ? AND user_id = ? 
@@ -77,9 +83,7 @@ accounts.get("/:id", async (c) => {
     );
     const { results: transactions } = await txStmt
       .bind(id, userId, limit, offset)
-      .all();
-
-      console.log(transactions);
+      .all<Transaction>();
 
     return c.json({
       success: true,

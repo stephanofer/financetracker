@@ -1,7 +1,7 @@
 import { useAccounts } from "./hooks/useAccounts";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useNavigate } from "react-router";
-import { formatCurrency } from "@/dashboard/utils";
+import { formatCurrency } from "@/dashboard/utils/utils";
 import { Eye, EyeOff, TrendingUp } from "lucide-react";
 import { useState } from "react";
 

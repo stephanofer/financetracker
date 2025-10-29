@@ -1,4 +1,4 @@
-import { formatCurrency } from "@/dashboard/utils";
+import { formatCurrency } from "@/dashboard/utils/utils";
 import { ArrowDownRight, ArrowUpRight } from "lucide-react";
 
 interface MainDetailsProps {

@@ -1,6 +1,6 @@
 import { Hono } from "hono";
 import { AppContext } from "../types";
-import {Category} from '@/react/dashboard/types'
+import {Category} from '@/react/dashboard/utils/types'
 
 const categories = new Hono<AppContext>();
 

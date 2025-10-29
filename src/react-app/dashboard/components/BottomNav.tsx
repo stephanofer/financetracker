@@ -10,7 +10,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
-import { ActionType } from "@/dashboard/types";
+import { ActionType } from "@/dashboard/utils/types";
 import { Home, Layers, Plus, Search, User, PlusIcon } from "lucide-react";
 import { useState } from "react";
 import { useNavigate } from "react-router";

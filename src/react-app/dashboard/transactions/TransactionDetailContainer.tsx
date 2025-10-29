@@ -15,8 +15,8 @@ import { useState } from "react";
 import { useNavigate, useParams } from "react-router";
 import { useTransaction } from "../hooks/useMainDetails";
 import { useDeleteTransaction } from "../hooks/useTransactions";
-import type { Attachment } from "../types";
-import { formatCurrency, formatDate, formatFileSize } from "../utils";
+import type { Attachment } from "../utils/types";
+import { formatCurrency, formatDate, formatFileSize } from "../utils/utils";
 
 export function TransactionDetailContainer() {
   const { id } = useParams();
@@ -63,7 +63,7 @@ export function TransactionDetailContainer() {
         {/* Animated background orb */}
         <div 
           className="absolute top-0 right-0 w-96 h-96 rounded-full blur-3xl opacity-20 animate-pulse"
-          style={{ backgroundColor: transaction.category_color }}
+          style={{ backgroundColor: transaction.category_color ?? '#64748b' }}
         />
 
         {/* Header */}
@@ -108,13 +108,13 @@ export function TransactionDetailContainer() {
             <div
               className="w-24 h-24 rounded-3xl flex items-center justify-center shadow-2xl relative overflow-hidden"
               style={{
-                backgroundColor: `${transaction.category_color}30`,
-                border: `2px solid ${transaction.category_color}50`
+                backgroundColor: `${transaction.category_color ?? '#64748b'}30`,
+                border: `2px solid ${(transaction.category_color ?? '#64748b')}50`
               }}
             >
               <div 
                 className="absolute inset-0 opacity-20"
-                style={{ backgroundColor: transaction.category_color }}
+                style={{ backgroundColor: transaction.category_color ?? '#64748b' }}
               />
               <span className="text-5xl relative z-10">{transaction.category_icon}</span>
             </div>
@@ -178,9 +178,9 @@ export function TransactionDetailContainer() {
               <span
                 className="px-4 py-2 rounded-xl text-sm font-semibold shadow-lg"
                 style={{
-                  backgroundColor: `${transaction.category_color}30`,
-                  color: transaction.category_color,
-                  border: `2px solid ${transaction.category_color}50`
+                  backgroundColor: `${transaction.category_color ?? '#64748b'}30`,
+                  color: transaction.category_color ?? '#64748b',
+                  border: `2px solid ${(transaction.category_color ?? '#64748b')}50`
                 }}
               >
                 {transaction.category_name}

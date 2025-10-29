@@ -1,4 +1,4 @@
-import { Account, ApiResponse, Transaction } from "@/dashboard/types";
+import { Account, ApiResponse, Transaction } from "@/dashboard/utils/types";
 import { useQuery } from "@tanstack/react-query";
 
 export function useAccounts() {

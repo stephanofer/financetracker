@@ -1,21 +1,33 @@
 import { Skeleton } from "@/components/ui/skeleton";
 import { Greeting } from "@/dashboard/components/Greeting";
 import { useSummary } from "@/dashboard/hooks/useMainDetails";
-import { User } from "@/dashboard/types";
-import { formatCurrency, formatDate } from "@/dashboard/utils";
+import { User } from "@/dashboard/utils/types";
+import { formatCurrency, formatDate } from "@/dashboard/utils/utils";
 import { ArrowUpRight, Bell, Check, TrendingUp } from "lucide-react";
 import { useNavigate, useRouteLoaderData } from "react-router";
-import { MainDetails } from "./components/home/MainDetails";
-import { SavingsCard } from "./components/home/SavingsCard";
+import { MainDetails } from "@/dashboard/components/home/MainDetails";
+import { SavingsCard } from "@/dashboard/components/home/SavingsCard";
 
 export function DashboardContainer() {
   const navigate = useNavigate();
-  const user = useRouteLoaderData("dashboard") as User;
+  const user = useRouteLoaderData<User>("dashboard");
+
+  if (!user) {
+    return <h1>Error</h1>;
+  }
+
   const { data: summaryData, isPending: isLoadingSummary } = useSummary({
     limit: 10,
   });
 
-  const { total, results: transactions = [] } = summaryData?.data || {};
+  if (!summaryData) {
+    return <h1>Error</h1>;
+  }
+
+  const total = summaryData.data.total;
+  const transactions = summaryData.data.results;
+
+  console.log(total);
 
   return (
     <div className="flex flex-col h-full bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 relative overflow-hidden">
@@ -86,7 +98,6 @@ export function DashboardContainer() {
         </div>
       </div>
 
-      {/* Progress Bar */}
       <div className="relative z-10 px-6 mb-4">
         <div className="relative bg-gradient-to-r from-slate-800/50 to-slate-900/50 backdrop-blur-sm rounded-2xl h-9 shadow-lg border border-white/10 overflow-hidden">
           <div
@@ -117,7 +128,6 @@ export function DashboardContainer() {
         </p>
       </div>
 
-      {/* Transactions Section */}
       <div className="bg-gradient-to-br from-slate-900/80 to-slate-950/80 backdrop-blur-xl border-t border-white/10 rounded-t-[40px] flex-1 overflow-y-auto pb-24 relative z-10 shadow-2xl">
         <div className="space-y-4">
           {/* Savings Card */}
@@ -129,7 +139,6 @@ export function DashboardContainer() {
             />
           </div>
 
-          {/* Transactions List */}
           {isLoadingSummary ? (
             <div className="px-6 flex flex-col gap-3">
               {[...Array(5)].map((_, i) => (
@@ -229,7 +238,7 @@ export function DashboardContainer() {
                   onClick={() => navigate("/dashboard/transactions")}
                   className="group w-full flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 border border-emerald-400/30 shadow-lg hover:shadow-emerald-500/30 transition-all duration-200 text-white font-semibold text-base tracking-tight hover:from-emerald-600 hover:to-teal-600 active:scale-95 focus:outline-none focus:ring-2 focus:ring-emerald-300"
                   aria-label="Ver más transacciones"
-                  style={{ letterSpacing: '0.01em' }}
+                  style={{ letterSpacing: "0.01em" }}
                 >
                   <span className="drop-shadow-sm">Ver más transacciones</span>
                   <ArrowUpRight className="w-5 h-5 text-white group-hover:translate-x-1 transition-transform duration-200" />

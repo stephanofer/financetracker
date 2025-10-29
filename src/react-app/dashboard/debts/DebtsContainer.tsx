@@ -14,7 +14,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
-import { formatCurrency } from "../utils";
+import { formatCurrency } from "../utils/utils";
 import { CreateDebtForm } from "./forms/CreateDebtForm";
 import { useDebts } from "./hooks/useDebts";
 

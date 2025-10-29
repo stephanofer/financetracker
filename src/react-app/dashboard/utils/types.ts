@@ -1,5 +1,83 @@
+export interface ApiResponse<T> {
+  success: boolean;
+  data: T;
+  count?: number;
+}
+
+export interface User {
+  id: number;
+  username: string;
+  email: string;
+  full_name: string;
+}
+
+export type AccountType =
+  | "cash"
+  | "debit"
+  | "credit"
+  | "bank"
+  | "savings"
+  | "investments";
+
+export type TransactionType =
+  | "income"
+  | "expense"
+  | "debt"
+  | "debt_payment"
+  | "transfer";
+
+export interface Account {
+  id: number;
+  name: string;
+  type: AccountType;
+  balance: number;
+  currency: string;
+  color: string | null;
+  icon: string | null;
+}
+
+export interface Transaction {
+  id: number;
+  type: TransactionType;
+  amount: number;
+  description: string | null;
+  notes: string | null;
+  transaction_date: string;
+  created_at: string;
+  updated_at: string;
+  destination_account_id: number | null;
+  debt_id: number | null;
+  category_name: string | null;
+  category_icon: string | null;
+  category_color: string | null;
+  subcategory_name: string | null;
+  account_name: string | null;
+  account_type: string | null;
+  attachments?: Attachment[];
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 export type ActionType = "expense" | "income" | null;
-export type ActionType2 = "income" | "expense" | "debt" | "debt_payment" | "transfer" | null;
+export type ActionType2 =
+  | "income"
+  | "expense"
+  | "debt"
+  | "debt_payment"
+  | "transfer"
+  | null;
 
 export interface Category {
   id: number;
@@ -12,12 +90,6 @@ export interface Category {
   created_at: string;
 }
 
-// interface Pagination {
-//   limit: number;
-//   offset: number;
-//   total: number;
-// }
-
 export interface Subcategory {
   id: number;
   category_id: number;
@@ -25,20 +97,6 @@ export interface Subcategory {
   order_index: number;
   is_active: boolean;
   created_at: string;
-}
-
-export interface Account {
-  id: number;
-  user_id: number;
-  name: string;
-  type: "cash" | "debit" | "credit" | "bank" | "savings" | "investments";
-  balance: number;
-  currency: string;
-  color: string | null;
-  icon: string | null;
-  is_active: boolean;
-  created_at: string;
-  updated_at: string;
 }
 
 export interface Attachment {
@@ -56,30 +114,6 @@ export interface Attachment {
   updated_at: string;
 }
 
-export interface Transaction {
-  id: number;
-  user_id: number;
-  type: "income" | "expense" | "debt" | "debt_payment" | "transfer";
-  amount: number;
-  category_id: number | null;
-  subcategory_id: number | null;
-  account_id: number;
-  description: string | null;
-  notes: string | null;
-  transaction_date: string;
-  created_at: string;
-  updated_at: string;
-  destination_account_id: number | null;
-  debt_id: number | null;
-  category_name?: string;
-  category_icon?: string;
-  category_color?: string;
-  subcategory_name?: string;
-  account_name?: string;
-  account_type?: string;
-  attachments?: Attachment[];
-}
-
 export interface TransactionInput {
   amount: number;
   description?: string;
@@ -92,13 +126,6 @@ export interface TransactionInput {
   file?: File[]; // archivos adjuntos
 }
 
-export interface ApiResponse<T> {
-  success: boolean;
-  data: T;
-  count?: number;
-  // pagination?: Pagination;
-}
-
 export interface ApiResponseTransaction {
   success: boolean;
   id: number;
@@ -106,13 +133,6 @@ export interface ApiResponseTransaction {
     r2_key: string;
     r2_url: string;
   } | null;
-}
-
-export interface User {
-  id: number;
-  username: string;
-  email: string;
-  full_name: string;
 }
 
 export interface TotalBalance {
@@ -138,7 +158,6 @@ export interface Summary {
 
 export type DebtStatus = "active" | "paid" | "overdue" | "partially_paid";
 export type DebtType = "person" | "institution";
-
 
 export type Debt = {
   id: number;

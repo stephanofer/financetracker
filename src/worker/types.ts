@@ -14,7 +14,22 @@ export type AppContext = {
   Variables: Variables;
 };
 
-export type User = {
+export type TransactionType =
+  | "income"
+  | "expense"
+  | "debt"
+  | "debt_payment"
+  | "transfer";
+
+export type AccountType =
+  | "cash"
+  | "debit"
+  | "credit"
+  | "bank"
+  | "savings"
+  | "investments";
+
+export interface User {
   id: number;
   username: string;
   password_hash: string;
@@ -22,7 +37,39 @@ export type User = {
   email: string;
   full_name: string;
   is_active: number;
-};
+}
+
+export interface Account {
+  id: number;
+  name: string;
+  type: AccountType;
+  balance: number;
+  currency: string;
+  color: string | null;
+  icon: string | null;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Transaction {
+  id: number;
+  type: TransactionType;
+  amount: number;
+  category_id: number | null;
+  subcategory_id: number | null;
+  account_id: number | null;
+  description: string | null;
+  notes: string | null;
+  transaction_date: string;
+  created_at: string;
+  updated_at: string;
+  destination_account_id: number | null;
+  debt_id: number | null;
+}
+
+
+
 
 export type Debt = {
   id: number;
@@ -59,4 +106,3 @@ export type DebtRowWithAggregates = Debt & {
   total_paid_installments: number | null;
   next_installment_due_date: string | null;
 };
-

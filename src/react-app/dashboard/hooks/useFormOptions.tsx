@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { Account, ApiResponse, Category, Subcategory } from "@/dashboard/types";
+import { Account, ApiResponse, Category, Subcategory } from "@/dashboard/utils/types";
 import { toast } from "sonner";
 
 export function useFormOptions() {

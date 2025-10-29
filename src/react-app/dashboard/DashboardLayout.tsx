@@ -1,4 +1,4 @@
-import { BottomNav } from "./components/BottomNav";
+import { BottomNav } from "@/dashboard/components/BottomNav";
 import { Outlet } from "react-router";
 
 export function DashboardLayout() {
@@ -9,4 +9,3 @@ export function DashboardLayout() {
     </>
   );
 }
-

@@ -13,8 +13,8 @@ import { DashboardLayout } from "@/dashboard/DashboardLayout";
 import { TransactionsContainer } from "@/dashboard/transactions/TransactionsContainer";
 import { TransactionDetailContainer } from "@/dashboard/transactions/TransactionDetailContainer";
 import { DebtsContainer } from "@/dashboard/debts/DebtsContainer";
-import { AccountsContainer } from "./dashboard/accounts/AccountsContainer";
-import { AccountsDetailContainer } from "./dashboard/accounts/AccountsDetailContainer";
+import { AccountsContainer } from "@/dashboard/accounts/AccountsContainer";
+import { AccountsDetailContainer } from "@/dashboard/accounts/AccountsDetailContainer";
 
 const router = createBrowserRouter([
   {

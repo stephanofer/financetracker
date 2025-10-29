@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { ApiResponseTransaction } from "@/dashboard/types";
+import { ApiResponseTransaction } from "@/dashboard/utils/types";
 import { toast } from "sonner";
 
 export function useTransaction() {

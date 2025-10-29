@@ -5,7 +5,7 @@ import {
   Summary,
   TotalBalance,
   Transaction,
-} from "../types";
+} from "../utils/types";
 
 export function useTotalBalance() {
   return useQuery({
