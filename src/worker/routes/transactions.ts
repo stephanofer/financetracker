@@ -86,7 +86,6 @@ transactions.get("/summary", async (c) => {
 
 transactions.post("/", async (c) => {
   try {
-    console.log("[POST /] Inicio endpoint");
     const body = await c.req.parseBody();
     console.log("[POST /] Body recibido:", body);
     const user = c.get("user");
@@ -258,9 +257,7 @@ transactions.post("/", async (c) => {
 
     const response = {
       success: true,
-      data: {
-        ...transaction,
-      },
+      data: transaction,
     };
     console.log("[POST /] Response:", response);
     return c.json(response);

@@ -68,6 +68,26 @@ export interface Transaction {
   debt_id: number | null;
 }
 
+export interface Category {
+  id: number;
+  name: string;
+  type: "income" | "expense";
+  color: string;
+  icon: string;
+  order_index: number;
+  is_active: boolean;
+  created_at: string;
+}
+
+export interface Subcategory {
+  id: number;
+  category_id: number;
+  name: string;
+  order_index: number;
+  is_active: boolean;
+  created_at: string;
+}
+
 
 
 

@@ -26,6 +26,9 @@ export type TransactionType =
   | "debt_payment"
   | "transfer";
 
+export type TransactionSimpleType = "expense" | "income" | null;
+
+export type FileType = "image" | "document" | "other";
 export interface Account {
   id: number;
   name: string;
@@ -56,28 +59,20 @@ export interface Transaction {
   attachments?: Attachment[];
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-export type ActionType = "expense" | "income" | null;
-export type ActionType2 =
-  | "income"
-  | "expense"
-  | "debt"
-  | "debt_payment"
-  | "transfer"
-  | null;
+export interface Attachment {
+  id: number;
+  transaction_id: number;
+  file_name: string;
+  original_file_name: string | null;
+  file_size: number | null;
+  mime_type: string | null;
+  file_type: FileType;
+  r2_key: string;
+  r2_url: string | null;
+  description: string | null;
+  uploaded_at: string;
+  updated_at: string;
+}
 
 export interface Category {
   id: number;
@@ -99,21 +94,6 @@ export interface Subcategory {
   created_at: string;
 }
 
-export interface Attachment {
-  id: number;
-  transaction_id: number;
-  file_name: string;
-  original_file_name: string | null;
-  file_size: number | null; // bytes
-  mime_type: string | null;
-  file_type: "image" | "pdf" | "document" | "receipt" | "other" | null;
-  r2_key: string;
-  r2_url: string | null;
-  description: string | null;
-  uploaded_at: string;
-  updated_at: string;
-}
-
 export interface TransactionInput {
   amount: number;
   description?: string;
@@ -125,16 +105,6 @@ export interface TransactionInput {
   userId: number;
   file?: File[]; // archivos adjuntos
 }
-
-export interface ApiResponseTransaction {
-  success: boolean;
-  id: number;
-  attachment: {
-    r2_key: string;
-    r2_url: string;
-  } | null;
-}
-
 export interface TotalBalance {
   total_balance: number;
   total_accounts: number;

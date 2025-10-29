@@ -1,31 +1,23 @@
 import { Skeleton } from "@/components/ui/skeleton";
-import { Greeting } from "@/dashboard/components/Greeting";
+import { Greeting } from "@/dashboard/home/components/Greeting";
 import { useSummary } from "@/dashboard/hooks/useMainDetails";
 import { User } from "@/dashboard/utils/types";
 import { formatCurrency, formatDate } from "@/dashboard/utils/utils";
 import { ArrowUpRight, Bell, Check, TrendingUp } from "lucide-react";
 import { useNavigate, useRouteLoaderData } from "react-router";
-import { MainDetails } from "@/dashboard/components/home/MainDetails";
-import { SavingsCard } from "@/dashboard/components/home/SavingsCard";
+import { MainDetails } from "@/dashboard/home/components/MainDetails";
+import { SavingsCard } from "@/dashboard/home/components/SavingsCard";
 
 export function DashboardContainer() {
   const navigate = useNavigate();
   const user = useRouteLoaderData<User>("dashboard");
 
-  if (!user) {
-    return <h1>Error</h1>;
-  }
-
   const { data: summaryData, isPending: isLoadingSummary } = useSummary({
     limit: 10,
   });
 
-  if (!summaryData) {
-    return <h1>Error</h1>;
-  }
-
-  const total = summaryData.data.total;
-  const transactions = summaryData.data.results;
+  const total = summaryData?.data.total;
+  const transactions = summaryData?.data.results;
 
   console.log(total);
 
@@ -43,7 +35,7 @@ export function DashboardContainer() {
             <h1 className="text-base font-bold text-white mb-1">
               Hi, Welcome Back{" "}
               {(() => {
-                const name = user.full_name || user.username || "";
+                const name = user?.full_name || user?.username || "";
                 const parts = name.split(" ");
                 if (parts.length > 1) {
                   return `${parts[0]} ${parts[1][0]}.`;
@@ -155,7 +147,7 @@ export function DashboardContainer() {
                 </div>
               ))}
             </div>
-          ) : transactions.length === 0 ? (
+          ) : transactions?.length === 0 ? (
             <div className="px-6 pt-8 text-center">
               <div className="w-20 h-20 bg-gradient-to-br from-slate-800/50 to-slate-900/50 rounded-3xl flex items-center justify-center mx-auto mb-4 backdrop-blur-sm border border-white/10">
                 <span className="text-4xl">📊</span>
@@ -165,7 +157,7 @@ export function DashboardContainer() {
           ) : (
             <>
               <div className="px-6 flex flex-col gap-3">
-                {transactions.map((expense, index) => (
+                {transactions?.map((expense, index) => (
                   <button
                     key={expense.id}
                     onClick={() =>

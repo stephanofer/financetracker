@@ -1,15 +1,17 @@
 import { Hono } from "hono";
-import { AppContext } from "../types";
-import {Subcategory} from '@/react/dashboard/utils/types'
+import { AppContext, Subcategory } from "../types";
 
 const subcategories = new Hono<AppContext>();
 
 subcategories.get("/", async (c) => {
   try {
     const categoryId = c.req.query("categoryId");
+    const user = c.get("user");
+    const userId = user.id;
 
-    let query = "SELECT * FROM subcategories WHERE is_active = 1";
-    const params: string[] = [];
+    let query =
+      "SELECT id, category_id, name, order_index, is_active, created_at FROM subcategories WHERE is_active = 1 AND user_id = ?";
+    const params: (string | number)[] = [userId];
 
     if (categoryId) {
       query += " AND category_id = ?";

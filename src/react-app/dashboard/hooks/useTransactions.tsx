@@ -1,11 +1,11 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { ApiResponseTransaction } from "@/dashboard/utils/types";
+import { ApiResponse, Transaction } from "@/dashboard/utils/types";
 import { toast } from "sonner";
 
 export function useTransaction() {
   const queryClient = useQueryClient();
 
-  return useMutation<ApiResponseTransaction, Error, FormData>({
+  return useMutation<ApiResponse<Transaction>, Error, FormData>({
     mutationFn: async (data: FormData) => {
       const response = await fetch(`/api/transactions`, {
         method: "POST",
@@ -52,10 +52,11 @@ export function useTransaction() {
       return response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ refetchType: "all" });
+      queryClient.invalidateQueries({
+        queryKey: ["summary", 10, 0],
+      });
     },
     onError: (error) => {
-      // Mostrar notificación de error
       toast.error("Error al registrar transacción", {
         description:
           error.message ||

@@ -1,17 +1,18 @@
 import { Hono } from "hono";
-import { AppContext } from "../types";
-import {Category} from '@/react/dashboard/utils/types'
+import { AppContext, Category } from "../types";
 
 const categories = new Hono<AppContext>();
 
 categories.get("/", async (c) => {
   try {
     const type = c.req.query("type");
+    const user = c.get("user");
+    const userId = user.id;
+    let query =
+      "SELECT id, name, type, color, icon, order_index, is_active, created_at FROM categories WHERE is_active = 1 AND user_id = ?";
+    const params: (string | number)[] = [userId];
 
-    let query = "SELECT * FROM categories WHERE is_active = 1";
-    const params: string[] = [];
-
-    if (type && (type === "ingreso" || type === "gasto")) {
+    if (type) {
       query += " AND type = ?";
       params.push(type);
     }

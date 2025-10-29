@@ -10,18 +10,18 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
-import { ActionType } from "@/dashboard/utils/types";
-import { Home, Layers, Plus, Search, User, PlusIcon } from "lucide-react";
+import { TransactionForm } from "@/dashboard/forms/TransactionForm";
+import { TransactionSimpleType } from "@/dashboard/utils/types";
+import { Home, Layers, Plus, PlusIcon, Search, User } from "lucide-react";
 import { useState } from "react";
 import { useNavigate } from "react-router";
-import { TransactionForm } from "@/dashboard/components/forms/TransactionForm";
 
 export function BottomNav() {
   const [showQuickActions, setShowQuickActions] = useState(false);
-  const [activeForm, setActiveForm] = useState<ActionType>(null);
+  const [activeForm, setActiveForm] = useState<TransactionSimpleType>(null);
   const navigate = useNavigate();
 
-  const handleActionClick = (actionType: ActionType) => {
+  const handleActionClick = (actionType: TransactionSimpleType) => {
     setShowQuickActions(false);
     setActiveForm(actionType);
   };
@@ -99,7 +99,6 @@ export function BottomNav() {
 
       <nav className="fixed bottom-0 left-0 right-0 bg-[#0E3E3E]/95 backdrop-blur-lg rounded-t-[50px] border-white/10 z-50">
         <div className="flex items-center justify-around h-20 px-6 ">
-          {/* Home Button */}
           <button
             onClick={() => navigate("/dashboard")}
             className="flex items-center justify-center w-14 h-14 text-white/60 hover:text-white hover:scale-105 transition-all duration-200 "
@@ -107,12 +106,10 @@ export function BottomNav() {
             <Home size={28} strokeWidth={2} />
           </button>
 
-          {/* Search Button */}
           <button className="flex items-center justify-center w-14 h-14 text-white/60 hover:text-white hover:scale-105 transition-all duration-200">
             <Search size={28} strokeWidth={2} />
           </button>
 
-          {/* Repeat Button - Centro (Siempre resaltado) */}
           <button
             onClick={() => setShowQuickActions(!showQuickActions)}
             className={`flex items-center justify-center w-14 h-14 bg-gradient-to-br from-emerald-400 to-cyan-400 rounded-2xl shadow-lg hover:scale-105 active:scale-95 transition-all duration-300 ${
@@ -126,7 +123,6 @@ export function BottomNav() {
             />
           </button>
 
-          {/* Layers Button */}
           <button
             onClick={() => navigate("debts")}
             className="flex items-center justify-center w-14 h-14 text-white/60 hover:text-white hover:scale-105 transition-all duration-200"
@@ -134,7 +130,6 @@ export function BottomNav() {
             <Layers size={28} strokeWidth={2} />
           </button>
 
-          {/* User Button */}
           <button className="flex items-center justify-center w-14 h-14 text-white/60 hover:text-white hover:scale-105 transition-all duration-200">
             <User size={28} strokeWidth={2} />
           </button>
