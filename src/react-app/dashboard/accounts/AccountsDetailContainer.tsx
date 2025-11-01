@@ -13,7 +13,7 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import { useNavigate, useParams } from "react-router";
-import { ActionType2 } from "../utils/types";
+import { TransactionType } from "../utils/types";
 
 export function AccountsDetailContainer() {
   const { id } = useParams();
@@ -26,7 +26,7 @@ export function AccountsDetailContainer() {
   const account = data?.data?.result;
   const transactions = data?.data?.transactions || [];
 
-  const getTransactionIcon = (type: ActionType2) => {
+  const getTransactionIcon = (type: TransactionType) => {
     switch (type) {
       case "income":
         return <ArrowDownLeft className="w-5 h-5" />;
@@ -39,7 +39,7 @@ export function AccountsDetailContainer() {
     }
   };
 
-  const getTransactionColor = (type: ActionType2) => {
+  const getTransactionColor = (type: TransactionType) => {
     switch (type) {
       case "income":
         return "text-emerald-400";
