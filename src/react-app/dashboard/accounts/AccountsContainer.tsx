@@ -18,11 +18,9 @@ export function AccountsContainer() {
 
   return (
     <div className="flex flex-col h-full bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 relative overflow-hidden">
-      {/* Animated background gradient orbs */}
       <div className="absolute top-0 right-0 w-96 h-96 bg-emerald-500/10 rounded-full blur-3xl animate-pulse" />
       <div className="absolute bottom-0 left-0 w-80 h-80 bg-teal-500/10 rounded-full blur-3xl animate-pulse delay-700" />
 
-      {/* Header with glassmorphism */}
       <header className="relative px-6 pt-8 pb-6 z-10">
         <div className="flex items-start justify-between mb-6">
           <div>

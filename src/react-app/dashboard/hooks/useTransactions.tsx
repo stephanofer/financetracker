@@ -107,7 +107,9 @@ export function useDeleteTransaction() {
       }
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ refetchType: "all" });
+      queryClient.invalidateQueries({
+        queryKey: ["summary", 10, 0],
+      });
       toast.success("Transacción eliminada correctamente");
     },
     onError: (error) => {

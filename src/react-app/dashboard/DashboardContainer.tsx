@@ -119,7 +119,6 @@ export function DashboardContainer() {
 
       <div className="bg-gradient-to-br from-slate-900/80 to-slate-950/80 backdrop-blur-xl border-t border-white/10 rounded-t-[40px] flex-1 overflow-y-auto pb-24 relative z-10 shadow-2xl">
         <div className="space-y-4">
-
           {isLoadingSummary ? (
             <div className="px-6 flex flex-col gap-3">
               {[...Array(5)].map((_, i) => (

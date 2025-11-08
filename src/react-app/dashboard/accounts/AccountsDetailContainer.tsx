@@ -8,8 +8,7 @@ import {
   DollarSign,
   Eye,
   EyeOff,
-  Plus,
-  Repeat,
+  Repeat
 } from "lucide-react";
 import { useState } from "react";
 import { useNavigate, useParams } from "react-router";
@@ -118,8 +117,12 @@ export function AccountsDetailContainer() {
               <div
                 className="w-14 h-14 rounded-2xl flex items-center justify-center text-3xl shadow-lg"
                 style={{
-                  backgroundColor: account.color ? account.color + "40" : undefined,
-                  border: account.color ? `2px solid ${account.color}60` : undefined,
+                  backgroundColor: account.color
+                    ? account.color + "40"
+                    : undefined,
+                  border: account.color
+                    ? `2px solid ${account.color}60`
+                    : undefined,
                 }}
               >
                 {account.icon}
@@ -131,9 +134,13 @@ export function AccountsDetailContainer() {
                 <span
                   className="inline-block text-xs px-3 py-1 rounded-full capitalize mt-1"
                   style={{
-                    backgroundColor: account.color ? account.color + "30" : undefined,
+                    backgroundColor: account.color
+                      ? account.color + "30"
+                      : undefined,
                     color: account.color || undefined,
-                    border: account.color ? `1px solid ${account.color}40` : undefined,
+                    border: account.color
+                      ? `1px solid ${account.color}40`
+                      : undefined,
                   }}
                 >
                   {account.type}
@@ -153,42 +160,6 @@ export function AccountsDetailContainer() {
               </div>
             </div>
           </div>
-        </div>
-
-        {/* Action Buttons */}
-        <div className="grid grid-cols-4 gap-3">
-          {[
-            { icon: Plus, label: "Add", color: "from-emerald-500 to-teal-500" },
-            {
-              icon: ArrowUpRight,
-              label: "Send",
-              color: "from-blue-500 to-cyan-500",
-            },
-            {
-              icon: ArrowDownLeft,
-              label: "Request",
-              color: "from-purple-500 to-pink-500",
-            },
-            {
-              icon: Repeat,
-              label: "Exchange",
-              color: "from-orange-500 to-amber-500",
-            },
-          ].map((action, idx) => (
-            <button
-              key={idx}
-              className="flex flex-col items-center gap-2 p-4 rounded-2xl bg-white/5 hover:bg-white/10 backdrop-blur-sm border border-white/10 transition-all active:scale-95 group"
-            >
-              <div
-                className={`w-12 h-12 rounded-xl bg-gradient-to-br ${action.color} flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform`}
-              >
-                <action.icon className="w-6 h-6 text-white" />
-              </div>
-              <span className="text-white text-xs font-medium">
-                {action.label}
-              </span>
-            </button>
-          ))}
         </div>
       </header>
 

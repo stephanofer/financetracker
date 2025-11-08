@@ -7,10 +7,20 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger
+  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Spinner } from "@/components/ui/spinner";
-import { ArrowLeft, Trash2, X, Calendar, Wallet, Tag, FileText, Image as ImageIcon, Paperclip } from "lucide-react";
+import {
+  ArrowLeft,
+  Trash2,
+  X,
+  Calendar,
+  Wallet,
+  Tag,
+  FileText,
+  Image as ImageIcon,
+  Paperclip,
+} from "lucide-react";
 import { useState } from "react";
 import { useNavigate, useParams } from "react-router";
 import { useTransaction } from "../hooks/useMainDetails";
@@ -20,12 +30,11 @@ import { formatCurrency, formatDate, formatFileSize } from "../utils/utils";
 
 export function TransactionDetailContainer() {
   const { id } = useParams();
+  const navigate = useNavigate();
   const { data, isPending } = useTransaction(Number(id));
   const { mutate } = useDeleteTransaction();
   const transaction = data?.data;
   const [selectedImage, setSelectedImage] = useState<Attachment | null>(null);
-
-  const navigate = useNavigate();
 
   const handleBack = () => {
     window.history.back();
@@ -51,7 +60,9 @@ export function TransactionDetailContainer() {
           <div className="w-20 h-20 bg-slate-800/50 rounded-3xl flex items-center justify-center mx-auto mb-4">
             <span className="text-4xl">❌</span>
           </div>
-          <span className="text-lg text-slate-300">No se encontró la transacción.</span>
+          <span className="text-lg text-slate-300">
+            No se encontró la transacción.
+          </span>
         </div>
       </div>
     );
@@ -61,9 +72,9 @@ export function TransactionDetailContainer() {
     <>
       <div className="flex flex-col h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 text-white relative overflow-hidden">
         {/* Animated background orb */}
-        <div 
+        <div
           className="absolute top-0 right-0 w-96 h-96 rounded-full blur-3xl opacity-20 animate-pulse"
-          style={{ backgroundColor: transaction.category_color ?? '#64748b' }}
+          style={{ backgroundColor: transaction.category_color ?? "#64748b" }}
         />
 
         {/* Header */}
@@ -85,15 +96,18 @@ export function TransactionDetailContainer() {
               <AlertDialogHeader>
                 <AlertDialogTitle>Delete transaction?</AlertDialogTitle>
                 <AlertDialogDescription>
-                  This action cannot be undone. This will permanently delete this transaction and all its data.
+                  This action cannot be undone. This will permanently delete
+                  this transaction and all its data.
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
                 <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction onClick={() => {
-                  mutate(id!);
-                  navigate("/");
-                }}>
+                <AlertDialogAction
+                  onClick={() => {
+                    mutate(id!);
+                    navigate("/");
+                  }}
+                >
                   Continue
                 </AlertDialogAction>
               </AlertDialogFooter>
@@ -108,15 +122,21 @@ export function TransactionDetailContainer() {
             <div
               className="w-24 h-24 rounded-3xl flex items-center justify-center shadow-2xl relative overflow-hidden"
               style={{
-                backgroundColor: `${transaction.category_color ?? '#64748b'}30`,
-                border: `2px solid ${(transaction.category_color ?? '#64748b')}50`
+                backgroundColor: `${transaction.category_color ?? "#64748b"}30`,
+                border: `2px solid ${
+                  transaction.category_color ?? "#64748b"
+                }50`,
               }}
             >
-              <div 
+              <div
                 className="absolute inset-0 opacity-20"
-                style={{ backgroundColor: transaction.category_color ?? '#64748b' }}
+                style={{
+                  backgroundColor: transaction.category_color ?? "#64748b",
+                }}
               />
-              <span className="text-5xl relative z-10">{transaction.category_icon}</span>
+              <span className="text-5xl relative z-10">
+                {transaction.category_icon}
+              </span>
             </div>
           </div>
 
@@ -127,9 +147,11 @@ export function TransactionDetailContainer() {
 
           {/* Amount - Enhanced with gradient */}
           <div className="text-center mb-2">
-            <p 
+            <p
               className={`text-5xl font-bold ${
-                transaction.type === "expense" ? "text-red-400" : "text-emerald-400"
+                transaction.type === "expense"
+                  ? "text-red-400"
+                  : "text-emerald-400"
               }`}
             >
               {transaction.type === "expense" ? "-" : "+"}
@@ -148,39 +170,55 @@ export function TransactionDetailContainer() {
             <div className="bg-gradient-to-br from-slate-800/50 to-slate-900/50 backdrop-blur-sm rounded-2xl p-5 mb-4 border border-white/10 shadow-lg">
               <div className="flex items-center gap-2 mb-3">
                 <FileText className="w-4 h-4 text-slate-400" />
-                <p className="text-xs text-slate-400 font-semibold uppercase tracking-wider">Description</p>
+                <p className="text-xs text-slate-400 font-semibold uppercase tracking-wider">
+                  Description
+                </p>
               </div>
-              <p className="text-sm text-slate-200 leading-relaxed">{transaction.description}</p>
+              <p className="text-sm text-slate-200 leading-relaxed">
+                {transaction.description}
+              </p>
             </div>
           )}
 
           {/* Account */}
-          <div className="bg-gradient-to-br from-slate-800/50 to-slate-900/50 backdrop-blur-sm rounded-2xl p-5 mb-4 border border-white/10 shadow-lg">
-            <div className="flex items-center gap-2 mb-3">
-              <Wallet className="w-4 h-4 text-slate-400" />
-              <p className="text-xs text-slate-400 font-semibold uppercase tracking-wider">Account</p>
+          {transaction.account_type && (
+            <div className="bg-gradient-to-br from-slate-800/50 to-slate-900/50 backdrop-blur-sm rounded-2xl p-5 mb-4 border border-white/10 shadow-lg">
+              <div className="flex items-center gap-2 mb-3">
+                <Wallet className="w-4 h-4 text-slate-400" />
+                <p className="text-xs text-slate-400 font-semibold uppercase tracking-wider">
+                  Account
+                </p>
+              </div>
+              <div className="flex items-center justify-between">
+                <p className="text-sm font-semibold text-white">
+                  {transaction.account_name}
+                </p>
+                <span className="px-3 py-1.5 bg-white/10 text-xs text-slate-300 rounded-xl uppercase font-medium border border-white/10">
+                  {transaction.account_type}
+                </span>
+              </div>
             </div>
-            <div className="flex items-center justify-between">
-              <p className="text-sm font-semibold text-white">{transaction.account_name}</p>
-              <span className="px-3 py-1.5 bg-white/10 text-xs text-slate-300 rounded-xl uppercase font-medium border border-white/10">
-                {transaction.account_type}
-              </span>
-            </div>
-          </div>
+          )}
 
           {/* Category & Subcategory */}
           <div className="bg-gradient-to-br from-slate-800/50 to-slate-900/50 backdrop-blur-sm rounded-2xl p-5 mb-4 border border-white/10 shadow-lg">
             <div className="flex items-center gap-2 mb-3">
               <Tag className="w-4 h-4 text-slate-400" />
-              <p className="text-xs text-slate-400 font-semibold uppercase tracking-wider">Category</p>
+              <p className="text-xs text-slate-400 font-semibold uppercase tracking-wider">
+                Category
+              </p>
             </div>
             <div className="flex items-center gap-2 flex-wrap">
               <span
                 className="px-4 py-2 rounded-xl text-sm font-semibold shadow-lg"
                 style={{
-                  backgroundColor: `${transaction.category_color ?? '#64748b'}30`,
-                  color: transaction.category_color ?? '#64748b',
-                  border: `2px solid ${(transaction.category_color ?? '#64748b')}50`
+                  backgroundColor: `${
+                    transaction.category_color ?? "#64748b"
+                  }30`,
+                  color: transaction.category_color ?? "#64748b",
+                  border: `2px solid ${
+                    transaction.category_color ?? "#64748b"
+                  }50`,
                 }}
               >
                 {transaction.category_name}
@@ -201,7 +239,9 @@ export function TransactionDetailContainer() {
             <div className="bg-gradient-to-br from-slate-800/50 to-slate-900/50 backdrop-blur-sm rounded-2xl p-5 mb-4 border border-white/10 shadow-lg">
               <div className="flex items-center gap-2 mb-3">
                 <ImageIcon className="w-4 h-4 text-slate-400" />
-                <p className="text-xs text-slate-400 font-semibold uppercase tracking-wider">Voucher</p>
+                <p className="text-xs text-slate-400 font-semibold uppercase tracking-wider">
+                  Voucher
+                </p>
               </div>
               <button
                 onClick={() => setSelectedImage(voucherImage)}
@@ -253,7 +293,9 @@ export function TransactionDetailContainer() {
             <div className="bg-gradient-to-br from-slate-800/50 to-slate-900/50 backdrop-blur-sm rounded-2xl p-5 mb-4 border border-white/10 shadow-lg">
               <div className="flex items-center gap-2 mb-3">
                 <FileText className="w-4 h-4 text-slate-400" />
-                <p className="text-xs text-slate-400 font-semibold uppercase tracking-wider">Notes</p>
+                <p className="text-xs text-slate-400 font-semibold uppercase tracking-wider">
+                  Notes
+                </p>
               </div>
               <p className="text-sm leading-relaxed text-slate-200">
                 {transaction.notes}
@@ -266,7 +308,9 @@ export function TransactionDetailContainer() {
             <div className="bg-gradient-to-br from-slate-800/50 to-slate-900/50 backdrop-blur-sm rounded-2xl p-5 mb-4 border border-white/10 shadow-lg">
               <div className="flex items-center gap-2 mb-3">
                 <Paperclip className="w-4 h-4 text-slate-400" />
-                <p className="text-xs text-slate-400 font-semibold uppercase tracking-wider">Other Files</p>
+                <p className="text-xs text-slate-400 font-semibold uppercase tracking-wider">
+                  Other Files
+                </p>
               </div>
               <div className="space-y-2">
                 {transaction.attachments

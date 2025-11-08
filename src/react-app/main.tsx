@@ -15,6 +15,7 @@ import { TransactionDetailContainer } from "@/dashboard/transactions/Transaction
 import { DebtsContainer } from "@/dashboard/debts/DebtsContainer";
 import { AccountsContainer } from "@/dashboard/accounts/AccountsContainer";
 import { AccountsDetailContainer } from "@/dashboard/accounts/AccountsDetailContainer";
+import { TransferContainer } from "@/dashboard/transfer/TransferContainer";
 
 const router = createBrowserRouter([
   {
@@ -55,6 +56,10 @@ const router = createBrowserRouter([
       {
         path: "accounts/:id",
         Component: AccountsDetailContainer,
+      },
+      {
+        path: "transfer",
+        Component: TransferContainer,
       },
     ],
   },

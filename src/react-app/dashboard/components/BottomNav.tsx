@@ -12,7 +12,15 @@ import {
 } from "@/components/ui/sheet";
 import { TransactionForm } from "@/dashboard/forms/TransactionForm";
 import { TransactionSimpleType } from "@/dashboard/utils/types";
-import { Home, Layers, Plus, PlusIcon, Search, User } from "lucide-react";
+import {
+  Home,
+  Layers,
+  Plus,
+  PlusIcon,
+  Search,
+  User,
+  ArrowLeftRight,
+} from "lucide-react";
 import { useState } from "react";
 import { useNavigate } from "react-router";
 
@@ -73,6 +81,23 @@ export function BottomNav() {
               </div>
               <span className="text-sm font-medium text-white">
                 Registrar Ingreso
+              </span>
+            </button>
+            <button
+              onClick={() => {
+                setShowQuickActions(false);
+                navigate("/dashboard/transfer");
+              }}
+              className="flex items-center gap-3 p-3.5 bg-gradient-to-r from-blue-500/10 to-blue-600/5 border border-blue-500/20 rounded-xl hover:from-blue-500/15 hover:to-blue-600/10 hover:border-blue-500/30 active:scale-[0.98] transition-all duration-200"
+            >
+              <div className="p-2 bg-blue-500/20 rounded-lg">
+                <ArrowLeftRight
+                  className="w-5 h-5 text-blue-400"
+                  strokeWidth={2.5}
+                />
+              </div>
+              <span className="text-sm font-medium text-white">
+                Transferencia entre cuentas
               </span>
             </button>
           </div>

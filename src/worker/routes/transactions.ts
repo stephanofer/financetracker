@@ -556,4 +556,214 @@ transactions.delete("/:id", async (c) => {
   });
 });
 
+transactions.post("/transfer", async (c) => {
+  try {
+    const user = c.get("user");
+    const userId = user.id;
+    const body = await c.req.json();
+
+    const {
+      amount,
+      sourceAccountId,
+      destinationAccountId,
+      description,
+      notes,
+      date,
+    } = body;
+
+    // Validación: Campos requeridos
+    if (!amount || !sourceAccountId || !destinationAccountId) {
+      return c.json(
+        {
+          success: false,
+          error: "amount, sourceAccountId y destinationAccountId son requeridos",
+        },
+        400
+      );
+    }
+
+    // Validación: Monto positivo
+    const transferAmount = parseFloat(amount);
+    if (isNaN(transferAmount) || transferAmount <= 0) {
+      return c.json(
+        {
+          success: false,
+          error: "El monto debe ser un número positivo mayor a 0",
+        },
+        400
+      );
+    }
+
+    // Validación: No transferir a la misma cuenta
+    if (sourceAccountId === destinationAccountId) {
+      return c.json(
+        {
+          success: false,
+          error: "No puedes transferir a la misma cuenta",
+        },
+        400
+      );
+    }
+
+    // Verificar que ambas cuentas existan y pertenezcan al usuario
+    const sourceAccountStmt = c.env.DB.prepare(
+      `SELECT id, name, balance, is_active FROM accounts WHERE id = ? AND user_id = ?`
+    );
+    const sourceAccount = await sourceAccountStmt
+      .bind(sourceAccountId, userId)
+      .first<{
+        id: number;
+        name: string;
+        balance: number;
+        is_active: number;
+      }>();
+
+    if (!sourceAccount) {
+      return c.json(
+        {
+          success: false,
+          error: "Cuenta de origen no encontrada",
+        },
+        404
+      );
+    }
+
+    // Validación: Cuenta de origen activa
+    if (!sourceAccount.is_active) {
+      return c.json(
+        {
+          success: false,
+          error: "La cuenta de origen está inactiva",
+        },
+        400
+      );
+    }
+
+    // Validación: Saldo suficiente
+    if (sourceAccount.balance < transferAmount) {
+      return c.json(
+        {
+          success: false,
+          error: `Saldo insuficiente en ${sourceAccount.name}. Saldo disponible: ${sourceAccount.balance}`,
+        },
+        400
+      );
+    }
+
+    const destinationAccountStmt = c.env.DB.prepare(
+      `SELECT id, name, is_active FROM accounts WHERE id = ? AND user_id = ?`
+    );
+    const destinationAccount = await destinationAccountStmt
+      .bind(destinationAccountId, userId)
+      .first<{ id: number; name: string; is_active: number }>();
+
+    if (!destinationAccount) {
+      return c.json(
+        {
+          success: false,
+          error: "Cuenta de destino no encontrada",
+        },
+        404
+      );
+    }
+
+    // Validación: Cuenta de destino activa
+    if (!destinationAccount.is_active) {
+      return c.json(
+        {
+          success: false,
+          error: "La cuenta de destino está inactiva",
+        },
+        400
+      );
+    }
+
+    const transactionDate = date || new Date().toISOString();
+    const transferDescription =
+      description ||
+      `Transferencia de ${sourceAccount.name} a ${destinationAccount.name}`;
+
+    // Crear la transacción de transferencia
+    const insertTransactionStmt = c.env.DB.prepare(
+      `INSERT INTO transactions 
+       (user_id, type, amount, account_id, destination_account_id, description, notes, transaction_date) 
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
+    );
+
+    // Preparar las actualizaciones de balance en un batch
+    const decreaseSourceBalance = c.env.DB.prepare(
+      `UPDATE accounts 
+       SET balance = balance - ?, updated_at = CURRENT_TIMESTAMP 
+       WHERE id = ? AND user_id = ?`
+    ).bind(transferAmount, sourceAccountId, userId);
+
+    const increaseDestinationBalance = c.env.DB.prepare(
+      `UPDATE accounts 
+       SET balance = balance + ?, updated_at = CURRENT_TIMESTAMP 
+       WHERE id = ? AND user_id = ?`
+    ).bind(transferAmount, destinationAccountId, userId);
+
+    // Ejecutar todo en un batch para garantizar atomicidad
+    const batchResults = await c.env.DB.batch([
+      insertTransactionStmt.bind(
+        userId,
+        "transfer",
+        transferAmount,
+        sourceAccountId,
+        destinationAccountId,
+        transferDescription,
+        notes || null,
+        transactionDate
+      ),
+      decreaseSourceBalance,
+      increaseDestinationBalance,
+    ]);
+
+    // Verificar que todas las operaciones fueron exitosas
+    const failed = batchResults.find((r) => !r.success);
+    if (failed) {
+      return c.json(
+        {
+          success: false,
+          error: "Error al procesar la transferencia",
+        },
+        500
+      );
+    }
+
+    const transactionId = batchResults[0].meta.last_row_id;
+
+    // Obtener la transacción creada
+    const getTransactionStmt = c.env.DB.prepare(
+      `SELECT 
+        t.id, t.type, t.amount, t.description, t.notes, t.transaction_date, 
+        t.created_at, t.updated_at,
+        sa.name as source_account_name,
+        da.name as destination_account_name
+       FROM transactions t
+       LEFT JOIN accounts sa ON t.account_id = sa.id
+       LEFT JOIN accounts da ON t.destination_account_id = da.id
+       WHERE t.id = ?`
+    );
+
+    const transaction = await getTransactionStmt.bind(transactionId).first();
+
+    return c.json({
+      success: true,
+      message: "Transferencia realizada exitosamente",
+      data: transaction,
+    });
+  } catch (error) {
+    console.error("[POST /transfer] Error al realizar transferencia:", error);
+    return c.json(
+      {
+        success: false,
+        error: "Error al realizar la transferencia",
+        message: error instanceof Error ? error.message : "Error desconocido",
+      },
+      500
+    );
+  }
+});
+
 export default transactions;
