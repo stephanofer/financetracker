@@ -6,7 +6,6 @@ import { formatCurrency, formatDate } from "@/dashboard/utils/utils";
 import { ArrowUpRight, Bell, Check, TrendingUp } from "lucide-react";
 import { useNavigate, useRouteLoaderData } from "react-router";
 import { MainDetails } from "@/dashboard/home/components/MainDetails";
-import { SavingsCard } from "@/dashboard/home/components/SavingsCard";
 
 export function DashboardContainer() {
   const navigate = useNavigate();
@@ -18,8 +17,6 @@ export function DashboardContainer() {
 
   const total = summaryData?.data.total;
   const transactions = summaryData?.data.results;
-
-  console.log(total);
 
   return (
     <div className="flex flex-col h-full bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 relative overflow-hidden">
@@ -116,20 +113,12 @@ export function DashboardContainer() {
           <Check className="w-3 h-3 text-white" strokeWidth={3} />
         </div>
         <p className="text-slate-300 text-xs font-medium">
-          You're doing great! Keep track of your spending.
+          You're doing great! Keep track of your.
         </p>
       </div>
 
       <div className="bg-gradient-to-br from-slate-900/80 to-slate-950/80 backdrop-blur-xl border-t border-white/10 rounded-t-[40px] flex-1 overflow-y-auto pb-24 relative z-10 shadow-2xl">
         <div className="space-y-4">
-          {/* Savings Card */}
-          <div className="px-6 pb-6 pt-6">
-            <SavingsCard
-              savingsPercentage={35}
-              revenueLastWeek={4000}
-              foodLastWeek={100}
-            />
-          </div>
 
           {isLoadingSummary ? (
             <div className="px-6 flex flex-col gap-3">
