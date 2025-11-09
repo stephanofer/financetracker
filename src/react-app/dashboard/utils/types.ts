@@ -56,6 +56,7 @@ export interface Transaction {
   subcategory_name: string | null;
   account_name: string | null;
   account_type: string | null;
+  destination_account_name: string | null;
   attachments?: Attachment[];
 }
 

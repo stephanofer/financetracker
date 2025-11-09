@@ -145,71 +145,92 @@ export function DashboardContainer() {
           ) : (
             <>
               <div className="px-6 flex flex-col gap-3">
-                {transactions?.map((expense, index) => (
-                  <button
-                    key={expense.id}
-                    onClick={() =>
-                      navigate(`transactions/${expense.id}/dashboard`)
-                    }
-                    className="flex items-center gap-4 w-full text-left bg-gradient-to-br from-slate-800/40 to-slate-900/40 hover:from-slate-800/60 hover:to-slate-900/60 backdrop-blur-sm rounded-2xl p-3 transition-all duration-300 border border-white/10 hover:border-white/20 active:scale-[0.98] shadow-lg hover:shadow-xl group"
-                    style={{
-                      animation: "fadeInUp 0.4s ease-out forwards",
-                      animationDelay: `${index * 50}ms`,
-                      opacity: 0,
-                    }}
-                  >
-                    {/* Category Icon */}
-                    <div
-                      className="rounded-xl p-2 flex-shrink-0 shadow-lg transition-transform group-hover:scale-110"
+                {transactions?.map((expense, index) => {
+                  const isTransfer = expense.type === "transfer";
+                  return (
+                    <button
+                      key={expense.id}
+                      onClick={() =>
+                        navigate(`transactions/${expense.id}/dashboard`)
+                      }
+                      className="flex items-center gap-4 w-full text-left bg-gradient-to-br from-slate-800/40 to-slate-900/40 hover:from-slate-800/60 hover:to-slate-900/60 backdrop-blur-sm rounded-2xl p-3 transition-all duration-300 border border-white/10 hover:border-white/20 active:scale-[0.98] shadow-lg hover:shadow-xl group"
                       style={{
-                        backgroundColor: expense.category_color
-                          ? `${expense.category_color}30`
-                          : "rgba(59, 130, 246, 0.3)",
-                        border: `2px solid ${
-                          expense.category_color || "#3b82f6"
-                        }40`,
+                        animation: "fadeInUp 0.4s ease-out forwards",
+                        animationDelay: `${index * 50}ms`,
+                        opacity: 0,
                       }}
                     >
-                      <span className="text-2xl">
-                        {expense.category_icon || "💰"}
-                      </span>
-                    </div>
-
-                    {/* Transaction Info */}
-                    <div className="flex-1 min-w-0">
-                      <p className="text-white font-semibold text-base truncate mb-1">
-                        {expense.category_name || "Expense"}
-                      </p>
-                      <div className="flex items-center gap-2">
-                        <p className="text-blue-400 text-xs font-medium whitespace-nowrap">
-                          {formatDate(expense.transaction_date)}
-                        </p>
-                        {expense.subcategory_name && (
-                          <>
-                            <span className="text-slate-600">•</span>
-                            <p className="text-slate-400 text-xs truncate">
-                              {expense.subcategory_name}
-                            </p>
-                          </>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Amount */}
-                    <div className="flex-shrink-0">
-                      <p
-                        className={`font-bold text-lg whitespace-nowrap ${
-                          expense.type === "income"
-                            ? "text-emerald-400"
-                            : "text-red-400"
-                        }`}
+                      {/* Category Icon */}
+                      <div
+                        className="rounded-xl p-2 flex-shrink-0 shadow-lg transition-transform group-hover:scale-110"
+                        style={{
+                          backgroundColor: isTransfer
+                            ? "rgba(59, 130, 246, 0.3)"
+                            : expense.category_color
+                            ? `${expense.category_color}30`
+                            : "rgba(59, 130, 246, 0.3)",
+                          border: isTransfer
+                            ? "2px solid #3b82f640"
+                            : `2px solid ${expense.category_color || "#3b82f6"}40`,
+                        }}
                       >
-                        {expense.type === "income" ? "+" : "-"}
-                        {formatCurrency(expense.amount)}
-                      </p>
-                    </div>
-                  </button>
-                ))}
+                        <span className="text-2xl">
+                          {isTransfer ? "🔄" : expense.category_icon || "💰"}
+                        </span>
+                      </div>
+
+                      {/* Transaction Info */}
+                      <div className="flex-1 min-w-0">
+                        <p className="text-white font-semibold text-base truncate mb-1">
+                          {isTransfer
+                            ? "Transferencia"
+                            : expense.category_name || "Expense"}
+                        </p>
+                        <div className="flex items-center gap-2">
+                          <p className="text-blue-400 text-xs font-medium whitespace-nowrap">
+                            {formatDate(expense.transaction_date)}
+                          </p>
+                          {expense.subcategory_name && !isTransfer && (
+                            <>
+                              <span className="text-slate-600">•</span>
+                              <p className="text-slate-400 text-xs truncate">
+                                {expense.subcategory_name}
+                              </p>
+                            </>
+                          )}
+                          {isTransfer && (
+                            <>
+                              <span className="text-slate-600">•</span>
+                              <p className="text-slate-400 text-xs truncate">
+                                Entre cuentas
+                              </p>
+                            </>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Amount */}
+                      <div className="flex-shrink-0">
+                        <p
+                          className={`font-bold text-lg whitespace-nowrap ${
+                            isTransfer
+                              ? "text-blue-400"
+                              : expense.type === "income"
+                              ? "text-emerald-400"
+                              : "text-red-400"
+                          }`}
+                        >
+                          {isTransfer
+                            ? ""
+                            : expense.type === "income"
+                            ? "+"
+                            : "-"}
+                          {formatCurrency(expense.amount)}
+                        </p>
+                      </div>
+                    </button>
+                  );
+                })}
               </div>
 
               {/* View More Button */}

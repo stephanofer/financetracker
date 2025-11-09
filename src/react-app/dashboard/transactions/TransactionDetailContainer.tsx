@@ -20,6 +20,7 @@ import {
   FileText,
   Image as ImageIcon,
   Paperclip,
+  ArrowRightLeft,
 } from "lucide-react";
 import { useState } from "react";
 import { useNavigate, useParams } from "react-router";
@@ -32,6 +33,7 @@ export function TransactionDetailContainer() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { data, isPending } = useTransaction(Number(id));
+  console.log(data);
   const { mutate } = useDeleteTransaction();
   const transaction = data?.data;
   const [selectedImage, setSelectedImage] = useState<Attachment | null>(null);
@@ -43,6 +45,8 @@ export function TransactionDetailContainer() {
   const voucherImage = transaction?.attachments?.find(
     (att) => att.file_type === "image"
   );
+
+  const isTransfer = transaction?.type === "transfer";
 
   if (isPending) {
     return (
@@ -74,7 +78,11 @@ export function TransactionDetailContainer() {
         {/* Animated background orb */}
         <div
           className="absolute top-0 right-0 w-96 h-96 rounded-full blur-3xl opacity-20 animate-pulse"
-          style={{ backgroundColor: transaction.category_color ?? "#64748b" }}
+          style={{
+            backgroundColor: isTransfer
+              ? "#3b82f6"
+              : transaction.category_color ?? "#64748b",
+          }}
         />
 
         {/* Header */}
@@ -122,39 +130,45 @@ export function TransactionDetailContainer() {
             <div
               className="w-24 h-24 rounded-3xl flex items-center justify-center shadow-2xl relative overflow-hidden"
               style={{
-                backgroundColor: `${transaction.category_color ?? "#64748b"}30`,
-                border: `2px solid ${
-                  transaction.category_color ?? "#64748b"
-                }50`,
+                backgroundColor: isTransfer
+                  ? "#3b82f630"
+                  : `${transaction.category_color ?? "#64748b"}30`,
+                border: isTransfer
+                  ? "2px solid #3b82f650"
+                  : `2px solid ${transaction.category_color ?? "#64748b"}50`,
               }}
             >
               <div
                 className="absolute inset-0 opacity-20"
                 style={{
-                  backgroundColor: transaction.category_color ?? "#64748b",
+                  backgroundColor: isTransfer
+                    ? "#3b82f6"
+                    : transaction.category_color ?? "#64748b",
                 }}
               />
               <span className="text-5xl relative z-10">
-                {transaction.category_icon}
+                {isTransfer ? "🔄" : transaction.category_icon}
               </span>
             </div>
           </div>
 
           {/* Category Name */}
           <h1 className="text-3xl font-bold text-center mb-3 text-white">
-            {transaction.category_name}
+            {isTransfer ? "Transferencia" : transaction.category_name}
           </h1>
 
           {/* Amount - Enhanced with gradient */}
           <div className="text-center mb-2">
             <p
               className={`text-5xl font-bold ${
-                transaction.type === "expense"
+                isTransfer
+                  ? "text-blue-400"
+                  : transaction.type === "expense"
                   ? "text-red-400"
                   : "text-emerald-400"
               }`}
             >
-              {transaction.type === "expense" ? "-" : "+"}
+              {isTransfer ? "" : transaction.type === "expense" ? "-" : "+"}
               {formatCurrency(transaction.amount)}
             </p>
           </div>
@@ -186,7 +200,7 @@ export function TransactionDetailContainer() {
               <div className="flex items-center gap-2 mb-3">
                 <Wallet className="w-4 h-4 text-slate-400" />
                 <p className="text-xs text-slate-400 font-semibold uppercase tracking-wider">
-                  Account
+                  {isTransfer ? "Cuenta Origen" : "Account"}
                 </p>
               </div>
               <div className="flex items-center justify-between">
@@ -200,39 +214,58 @@ export function TransactionDetailContainer() {
             </div>
           )}
 
-          {/* Category & Subcategory */}
-          <div className="bg-gradient-to-br from-slate-800/50 to-slate-900/50 backdrop-blur-sm rounded-2xl p-5 mb-4 border border-white/10 shadow-lg">
-            <div className="flex items-center gap-2 mb-3">
-              <Tag className="w-4 h-4 text-slate-400" />
-              <p className="text-xs text-slate-400 font-semibold uppercase tracking-wider">
-                Category
-              </p>
+          {/* Destination Account - Only for transfers */}
+          {isTransfer && transaction.destination_account_id && (
+            <div className="bg-gradient-to-br from-blue-800/30 to-blue-900/30 backdrop-blur-sm rounded-2xl p-5 mb-4 border border-blue-500/20 shadow-lg">
+              <div className="flex items-center gap-2 mb-3">
+                <ArrowRightLeft className="w-4 h-4 text-blue-400" />
+                <p className="text-xs text-blue-400 font-semibold uppercase tracking-wider">
+                  Cuenta Destino
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                <p className="text-sm font-semibold text-white">
+                  {transaction.destination_account_name}
+                </p>
+              </div>
             </div>
-            <div className="flex items-center gap-2 flex-wrap">
-              <span
-                className="px-4 py-2 rounded-xl text-sm font-semibold shadow-lg"
-                style={{
-                  backgroundColor: `${
-                    transaction.category_color ?? "#64748b"
-                  }30`,
-                  color: transaction.category_color ?? "#64748b",
-                  border: `2px solid ${
-                    transaction.category_color ?? "#64748b"
-                  }50`,
-                }}
-              >
-                {transaction.category_name}
-              </span>
-              {transaction.subcategory_name && (
-                <>
-                  <span className="text-slate-500 text-lg">→</span>
-                  <span className="px-4 py-2 bg-blue-500/30 text-blue-400 rounded-xl text-sm font-semibold border-2 border-blue-500/50 shadow-lg">
-                    {transaction.subcategory_name}
-                  </span>
-                </>
-              )}
+          )}
+
+          {/* Category & Subcategory - Only for non-transfers */}
+          {!isTransfer && (
+            <div className="bg-gradient-to-br from-slate-800/50 to-slate-900/50 backdrop-blur-sm rounded-2xl p-5 mb-4 border border-white/10 shadow-lg">
+              <div className="flex items-center gap-2 mb-3">
+                <Tag className="w-4 h-4 text-slate-400" />
+                <p className="text-xs text-slate-400 font-semibold uppercase tracking-wider">
+                  Category
+                </p>
+              </div>
+              <div className="flex items-center gap-2 flex-wrap">
+                <span
+                  className="px-4 py-2 rounded-xl text-sm font-semibold shadow-lg"
+                  style={{
+                    backgroundColor: `${
+                      transaction.category_color ?? "#64748b"
+                    }30`,
+                    color: transaction.category_color ?? "#64748b",
+                    border: `2px solid ${
+                      transaction.category_color ?? "#64748b"
+                    }50`,
+                  }}
+                >
+                  {transaction.category_name}
+                </span>
+                {transaction.subcategory_name && (
+                  <>
+                    <span className="text-slate-500 text-lg">→</span>
+                    <span className="px-4 py-2 bg-blue-500/30 text-blue-400 rounded-xl text-sm font-semibold border-2 border-blue-500/50 shadow-lg">
+                      {transaction.subcategory_name}
+                    </span>
+                  </>
+                )}
+              </div>
             </div>
-          </div>
+          )}
 
           {/* Voucher Preview - Enhanced */}
           {voucherImage && (

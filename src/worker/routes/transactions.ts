@@ -370,11 +370,13 @@ transactions.get("/:id", async (c) => {
         c.color as category_color,
         sc.name as subcategory_name,
         a.name as account_name,
-        a.type as account_type
+        a.type as account_type,
+        da.name as destination_account_name
       FROM transactions t
       LEFT JOIN categories c ON t.category_id = c.id
       LEFT JOIN subcategories sc ON t.subcategory_id = sc.id
       LEFT JOIN accounts a ON t.account_id = a.id
+      LEFT JOIN accounts da ON t.destination_account_id = da.id
       WHERE t.id = ? AND t.user_id = ?`
     );
 
@@ -392,8 +394,13 @@ transactions.get("/:id", async (c) => {
       );
     }
 
+    // Si no hay cuenta destino, devolver destination_account_name como null
+    if (!transaction.destination_account_id) {
+      transaction.destination_account_name = null;
+    }
+
     const attachmentsStmt = c.env.DB.prepare(
-      ` SELECT* FROM attachments WHERE transaction_id = ? ORDER BY uploaded_at DESC`
+      `SELECT * FROM attachments WHERE transaction_id = ? ORDER BY uploaded_at DESC`
     );
 
     const { results: attachments } = await attachmentsStmt
