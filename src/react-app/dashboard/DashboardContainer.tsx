@@ -144,7 +144,7 @@ export function DashboardContainer() {
             </div>
           ) : (
             <>
-              <div className="px-6 flex flex-col gap-3">
+              <div className="px-6 pt-3 flex flex-col gap-3">
                 {transactions?.map((expense, index) => {
                   const isTransfer = expense.type === "transfer";
                   return (
