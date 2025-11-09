@@ -175,3 +175,62 @@ export type DebtsApiResponse = {
   };
   debts: DebtRowWithAggregates[];
 };
+
+// Tipos para el detalle de una deuda específica
+export interface DebtPayment {
+  id: number;
+  amount: number;
+  transaction_date: string;
+  description: string | null;
+  notes: string | null;
+  created_at: string;
+  account: {
+    name: string;
+    type: string | null;
+    icon: string | null;
+    color: string | null;
+  } | null;
+}
+
+export interface DebtInstallment {
+  id: number;
+  installment_number: number;
+  amount: number;
+  due_date: string;
+  status: "pending" | "paid" | "overdue" | "partial";
+  paid_amount: number;
+  paid_date: string | null;
+  notes: string | null;
+  created_at: string;
+  transaction_id: number | null;
+  transaction_date: string | null;
+}
+
+export interface DebtDetailApiResponse {
+  debt: DebtRowWithAggregates;
+  payments: {
+    list: DebtPayment[];
+    statistics: {
+      total_payments: number;
+      total_amount: number;
+      average_amount: number;
+      last_payment: DebtPayment | null;
+    };
+  };
+  installments: {
+    list: DebtInstallment[];
+    statistics: {
+      total: number;
+      pending: number;
+      paid: number;
+      overdue: number;
+      partial: number;
+    };
+  };
+  summary: {
+    payment_progress: number;
+    is_overdue: boolean;
+    days_since_start: number;
+    days_until_due: number | null;
+  };
+}

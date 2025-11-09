@@ -1,10 +1,4 @@
-import {
-  AlertCircle,
-  Calendar,
-  Check,
-  Plus,
-  TrendingDown
-} from "lucide-react";
+import { AlertCircle, Calendar, Check, Plus, TrendingDown } from "lucide-react";
 import { useState } from "react";
 
 import {
@@ -16,12 +10,20 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatCurrency } from "../utils/utils";
 import { CreateDebtForm } from "./forms/CreateDebtForm";
+import { PayDebtForm } from "./forms/PayDebtForm";
 import { useDebts } from "./hooks/useDebts";
+
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Button } from "@/components/ui/button";
 
 export function DebtsContainer() {
   const { data, isPending, error } = useDebts();
-  const [filter, setFilter] = useState("all");
-  const [openDialog, setOpenDialog] = useState(false);
+  const [filter, setFilter] = useState("active");
+  const [openDialog, setOpenDialog] = useState<"create" | "pay" | null>(null);
 
   if (error) {
     return (
@@ -52,68 +54,75 @@ export function DebtsContainer() {
     return diffDays;
   };
 
-  const getStatusBadge = (status: string, daysUntil: number) => {
-    if (status === "overdue" || daysUntil < 0) {
-      return {
-        text: "Vencida",
-        color: "bg-red-500/20 text-red-400 border-red-500/30",
-      };
+  const getStatusBadge = (status: string | null) => {
+    switch (status) {
+      case "paid":
+        return {
+          text: "Pagada",
+          color: "bg-green-500/20 text-green-400 border-green-500/30",
+        };
+      case "overdue":
+        return {
+          text: "Vencida",
+          color: "bg-red-500/20 text-red-400 border-red-500/30",
+        };
+      case "active":
+        return {
+          text: "Activa",
+          color: "bg-blue-500/20 text-blue-400 border-blue-500/30",
+        };
+      default:
+        return {
+          text: "Pendiente",
+          color: "bg-orange-500/20 text-orange-400 border-orange-500/30",
+        };
     }
-    if (daysUntil <= 7) {
-      return {
-        text: "Urgente",
-        color: "bg-orange-500/20 text-orange-400 border-orange-500/30",
-      };
-    }
-    return {
-      text: "Al día",
-      color: "bg-green-500/20 text-green-400 border-green-500/30",
-    };
   };
 
   const filteredDebts = debts.filter((debt) => {
-    const daysUntil = getDaysUntilDue(debt.due_date);
     if (filter === "all") return true;
-    if (filter === "overdue") return debt.status === "overdue" || daysUntil < 0;
-    if (filter === "urgent") return daysUntil <= 7 && daysUntil >= 0;
-    if (filter === "active") return daysUntil > 7;
+    if (filter === "active") return debt.status === "active";
+    if (filter === "overdue") return debt.status === "overdue";
+    if (filter === "paid") return debt.status === "paid";
     return true;
   });
 
   // Contadores para los filtros
-  const overdueCount = debts.filter(
-    (d) => d.status === "overdue" || getDaysUntilDue(d.due_date) < 0
-  ).length;
-  const urgentCount = debts.filter(
-    (d) => getDaysUntilDue(d.due_date) <= 7 && getDaysUntilDue(d.due_date) >= 0
-  ).length;
-  const activeCount = debts.filter(
-    (d) => getDaysUntilDue(d.due_date) > 7
-  ).length;
+  const activeCount = debts.filter((d) => d.status === "active").length;
+  const overdueCount = debts.filter((d) => d.status === "overdue").length;
+  const paidCount = debts.filter((d) => d.status === "paid").length;
 
   return (
     <>
       <Dialog
-        open={openDialog}
+        open={openDialog !== null}
         onOpenChange={() => {
-          setOpenDialog(false);
+          setOpenDialog(null);
         }}
       >
         <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-[500px]">
           <DialogHeader>
             <DialogTitle className="text-sm">
-              ¿Otra deuda más? ¡Claro, qué podría salir mal!
+              
+              {openDialog === "create"
+                ? "¿Otra deuda más? ¡Claro, qué podría salir mal!"
+                : openDialog === "pay"
+                ? "Pagar deuda: Porque nada es gratis en esta vida"
+                : ""}
             </DialogTitle>
           </DialogHeader>
           <div className="mt-4">
-            {openDialog && (
-              <CreateDebtForm handleClose={() => setOpenDialog(false)} />
+            {openDialog === "create" && (
+              <CreateDebtForm handleClose={() => setOpenDialog(null)} />
+            )}
+            {openDialog === "pay" && (
+              <PayDebtForm handleClose={() => setOpenDialog(null)} />
             )}
           </div>
         </DialogContent>
       </Dialog>
 
-      <div className="flex flex-col h-screen bg-gradient-to-br from-[#0A4A4A] to-[#052224]">
+      <div className="flex flex-col h-screen bg-gradient-to-br from-[#0A4A4A] to-[#052224] overflow-y-auto">
         {/* Header con mejor jerarquía */}
         <header className="px-6 pt-6 pb-4">
           <div className="flex items-center justify-between mb-4">
@@ -123,12 +132,24 @@ export function DebtsContainer() {
                 Mantén el control de tus finanzas
               </p>
             </div>
-            <button
-              onClick={() => setOpenDialog(true)}
-              className="bg-white/10 backdrop-blur-sm rounded-2xl p-3 hover:bg-white/20 transition-all active:scale-95"
-            >
-              <Plus className="w-6 h-6 text-white" />
-            </button>
+            <Popover>
+              <PopoverTrigger asChild>
+                <button
+                  // onClick={() => setOpenDialog(true)}
+                  className="bg-white/10 backdrop-blur-sm rounded-2xl p-3 hover:bg-white/20 transition-all active:scale-95"
+                >
+                  <Plus className="w-6 h-6 text-white" />
+                </button>
+              </PopoverTrigger>
+              <PopoverContent className="mr-5">
+                <div className="flex flex-col gap-3 py-2">
+                  <Button onClick={() => setOpenDialog("pay")}>Pagar Deuda</Button>
+                  <Button variant="secondary" onClick={() => setOpenDialog("create")}>
+                    Nueva deuda
+                  </Button>
+                </div>
+              </PopoverContent>
+            </Popover>
           </div>
 
           {/* Tarjeta de progreso mejorada o Skeleton */}
@@ -162,9 +183,6 @@ export function DebtsContainer() {
               <div className="flex items-center justify-between mt-2">
                 <span className="text-white/80 text-sm font-medium">
                   {progress}% completado
-                </span>
-                <span className="text-white/60 text-xs">
-                  ${totalDebt.toLocaleString()} total
                 </span>
               </div>
             </div>
@@ -200,10 +218,10 @@ export function DebtsContainer() {
               </>
             ) : (
               [
-                { id: "all", label: "Todas", count: debts.length },
+                { id: "active", label: "Activas", count: activeCount },
                 { id: "overdue", label: "Vencidas", count: overdueCount },
-                { id: "urgent", label: "Urgentes", count: urgentCount },
-                { id: "active", label: "Al día", count: activeCount },
+                { id: "paid", label: "Pagadas", count: paidCount },
+                { id: "all", label: "Todas", count: debts.length },
               ].map(({ id, label, count }) => (
                 <button
                   key={id}
@@ -221,7 +239,7 @@ export function DebtsContainer() {
           </div>
         </div>
         {/* Lista de deudas mejorada */}
-        <div className="flex-1 overflow-y-auto px-6 pb-24">
+        <div className="px-6 pb-24">
           {isPending ? (
             <div className="space-y-3">
               {/* Skeleton de una sola card */}
@@ -264,10 +282,7 @@ export function DebtsContainer() {
                     ? Math.round((paid / debt.original_amount) * 100)
                     : 0;
                 const daysUntil = getDaysUntilDue(debt.due_date);
-                const statusBadge = getStatusBadge(
-                  debt.status ?? "",
-                  daysUntil
-                );
+                const statusBadge = getStatusBadge(debt.status);
                 const remaining = debt.remaining_amount;
                 // Icono y color por tipo (puedes personalizar más)
                 const icon = debt.type === "person" ? "💳" : "💸";
@@ -318,13 +333,13 @@ export function DebtsContainer() {
                           <span className="text-white/70">
                             Restante:{" "}
                             <span className="font-bold text-[#FF6B6B]">
-                              ${remaining.toLocaleString()}
+                              {formatCurrency(remaining)}
                             </span>
                           </span>
                           <span className="text-white/70">
                             Pagado:{" "}
                             <span className="font-semibold text-[#00D09E]">
-                              ${paid.toLocaleString()}
+                              {paid.toLocaleString()}
                             </span>
                           </span>
                         </div>

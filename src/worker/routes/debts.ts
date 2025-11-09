@@ -1,6 +1,6 @@
 import { Hono } from "hono";
-import { getDebtsWithAggregates } from "../services/debts.service";
-import { AppContext, DebtRowWithAggregates } from "../types";
+import { getDebtsWithAggregates, getDebtDetailById } from "../services/debts.service";
+import { AppContext, DebtRowWithAggregates, DebtPaymentRow, DebtInstallmentRow } from "../types";
 
 const debts = new Hono<AppContext>();
 
@@ -102,8 +102,22 @@ debts.get("/", async (c) => {
 debts.post("/", async (c) => {
   try {
     const user = c.get("user");
-    const body = await c.req.json();
-    console.log(body);
+    
+    // Intentar parsear el JSON con manejo de errores
+    let body;
+    try {
+      body = await c.req.json();
+    } catch (parseError) {
+      console.error("Error al parsear JSON:", parseError);
+      return c.json(
+        {
+          success: false,
+          error: "Formato de datos inválido. Se esperaba JSON válido.",
+        },
+        400
+      );
+    }
+    
 
     // Validación básica de campos requeridos
     const requiredFields = ["name", "type", "original_amount", "start_date"];
@@ -178,6 +192,150 @@ debts.post("/", async (c) => {
       {
         success: false,
         error: "Error al crear la deuda",
+      },
+      500
+    );
+  }
+});
+
+debts.get("/:id", async (c) => {
+  try {
+    const user = c.get("user");
+    const debtId = parseInt(c.req.param("id"));
+
+    // Validar que el ID sea un número válido
+    if (isNaN(debtId)) {
+      return c.json(
+        {
+          success: false,
+          error: "ID de deuda inválido",
+        },
+        400
+      );
+    }
+
+    const debtDetail = await getDebtDetailById(c.env.DB, debtId, user.id);
+
+    if (!debtDetail) {
+      return c.json(
+        {
+          success: false,
+          error: "Deuda no encontrada",
+        },
+        404
+      );
+    }
+
+    const { debt, payments, installments } = debtDetail;
+
+    // Normalizar la deuda
+    const normalizedDebt = normalizeDebtRow(debt);
+
+    // Normalizar pagos
+    const normalizedPayments = payments.map((payment: DebtPaymentRow) => ({
+      id: payment.id,
+      amount: Number(payment.amount),
+      transaction_date: payment.transaction_date,
+      description: payment.description,
+      notes: payment.notes,
+      created_at: payment.created_at,
+      account: payment.account_name
+        ? {
+            name: payment.account_name,
+            type: payment.account_type,
+            icon: payment.account_icon,
+            color: payment.account_color,
+          }
+        : null,
+    }));
+
+    // Normalizar cuotas
+    const normalizedInstallments = installments.map((installment: DebtInstallmentRow) => ({
+      id: installment.id,
+      installment_number: installment.installment_number,
+      amount: Number(installment.amount),
+      due_date: installment.due_date,
+      status: installment.status,
+      paid_amount: Number(installment.paid_amount ?? 0),
+      paid_date: installment.paid_date,
+      notes: installment.notes,
+      created_at: installment.created_at,
+      transaction_id: installment.transaction_id,
+      transaction_date: installment.transaction_date,
+    }));
+
+    // Calcular estadísticas adicionales
+    const payment_progress =
+      normalizedDebt.original_amount > 0
+        ? ((normalizedDebt.original_amount - normalizedDebt.remaining_amount) /
+            normalizedDebt.original_amount) *
+          100
+        : 0;
+
+    const average_payment_amount =
+      normalizedPayments.length > 0
+        ? normalizedPayments.reduce((sum, p) => sum + p.amount, 0) /
+          normalizedPayments.length
+        : 0;
+
+    return c.json({
+      success: true,
+      data: {
+        debt: normalizedDebt,
+        payments: {
+          list: normalizedPayments,
+          statistics: {
+            total_payments: normalizedPayments.length,
+            total_amount: normalizedPayments.reduce(
+              (sum, p) => sum + p.amount,
+              0
+            ),
+            average_amount: average_payment_amount,
+            last_payment: normalizedPayments[0] || null,
+          },
+        },
+        installments: {
+          list: normalizedInstallments,
+          statistics: {
+            total: normalizedInstallments.length,
+            pending: normalizedInstallments.filter((i) => i.status === "pending")
+              .length,
+            paid: normalizedInstallments.filter((i) => i.status === "paid")
+              .length,
+            overdue: normalizedInstallments.filter((i) => i.status === "overdue")
+              .length,
+            partial: normalizedInstallments.filter((i) => i.status === "partial")
+              .length,
+          },
+        },
+        summary: {
+          payment_progress: Number(payment_progress.toFixed(2)),
+          is_overdue:
+            normalizedDebt.status === "overdue" ||
+            normalizedInstallments.some((i) => i.status === "overdue"),
+          days_since_start: normalizedDebt.start_date
+            ? Math.floor(
+                (new Date().getTime() -
+                  new Date(normalizedDebt.start_date).getTime()) /
+                  (1000 * 60 * 60 * 24)
+              )
+            : 0,
+          days_until_due: normalizedDebt.due_date
+            ? Math.floor(
+                (new Date(normalizedDebt.due_date).getTime() -
+                  new Date().getTime()) /
+                  (1000 * 60 * 60 * 24)
+              )
+            : null,
+        },
+      },
+    });
+  } catch (error) {
+    console.error("Error al obtener detalle de deuda:", error);
+    return c.json(
+      {
+        success: false,
+        error: "Error al obtener el detalle de la deuda",
       },
       500
     );

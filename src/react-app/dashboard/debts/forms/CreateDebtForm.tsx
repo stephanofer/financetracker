@@ -20,7 +20,7 @@ import {
   CreateDebtFormData,
   CreateDebtSchema,
   defaultCreateDebtValues,
-} from "../Debts";
+} from "./schems/CreateDebts";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import { useCreateDebt } from "../hooks/useDebts";
@@ -68,6 +68,7 @@ export function CreateDebtForm({ handleClose }: CreateDebtFormProps) {
                     placeholder="Ej. Juan Pérez / Banco XYZ "
                     type="text"
                     className="w-full"
+                    autoComplete="off"
                   />
                 </FormControl>
                 <FormMessage />

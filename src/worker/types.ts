@@ -126,3 +126,30 @@ export type DebtRowWithAggregates = Debt & {
   total_paid_installments: number | null;
   next_installment_due_date: string | null;
 };
+
+export type DebtPaymentRow = {
+  id: number;
+  amount: number;
+  transaction_date: string;
+  description: string | null;
+  notes: string | null;
+  created_at: string;
+  account_name: string | null;
+  account_type: string | null;
+  account_icon: string | null;
+  account_color: string | null;
+};
+
+export type DebtInstallmentRow = {
+  id: number;
+  installment_number: number;
+  amount: number;
+  due_date: string;
+  status: "pending" | "paid" | "overdue" | "partial";
+  paid_amount: number;
+  paid_date: string | null;
+  notes: string | null;
+  created_at: string;
+  transaction_id: number | null;
+  transaction_date: string | null;
+};

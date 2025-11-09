@@ -33,7 +33,6 @@ export function TransactionDetailContainer() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { data, isPending } = useTransaction(Number(id));
-  console.log(data);
   const { mutate } = useDeleteTransaction();
   const transaction = data?.data;
   const [selectedImage, setSelectedImage] = useState<Attachment | null>(null);

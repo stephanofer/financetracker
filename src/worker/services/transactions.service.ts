@@ -15,7 +15,8 @@ export async function updateAccountBalance(
   amount: number,
   type: string
 ) {
-  const operation = type === "income" ? "+" : "-";
+  // Para debt_payment, restamos del balance (como un expense)
+  const operation = (type === "income") ? "+" : "-";
 
   const stmt = db.prepare(
     `UPDATE accounts 

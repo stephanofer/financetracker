@@ -101,6 +101,9 @@ transactions.post("/", async (c) => {
     const accountId = body["accountId"]
       ? parseInt(body["accountId"] as string)
       : null;
+    const debtId = body["debtId"]
+      ? parseInt(body["debtId"] as string)
+      : null;
     const description = body["description"] || null;
     const type = body["type"] as string;
     const notes = body["notes"] || null;
@@ -111,6 +114,7 @@ transactions.post("/", async (c) => {
       categoryId,
       subcategoryId,
       accountId,
+      debtId,
       description,
       type,
       notes,
@@ -185,8 +189,8 @@ transactions.post("/", async (c) => {
 
     const stmt = c.env.DB.prepare(
       `INSERT INTO transactions 
-       (user_id, type, amount, category_id, subcategory_id, account_id, description, notes, transaction_date) 
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
+       (user_id, type, amount, category_id, subcategory_id, account_id, debt_id, description, notes, transaction_date) 
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
     );
     console.log("[POST /] Ejecutando INSERT de transacción");
 
@@ -198,6 +202,7 @@ transactions.post("/", async (c) => {
         categoryId || null,
         subcategoryId || null,
         accountId,
+        debtId || null,
         description || null,
         notes || null,
         date
@@ -247,6 +252,27 @@ transactions.post("/", async (c) => {
       });
       await updateAccountBalance(c.env.DB, accountId, userId, amount, type);
       console.log("[POST /] Balance actualizado");
+    }
+
+    // Si es un pago de deuda, actualizar la deuda
+    if (type === "debt_payment" && debtId) {
+      console.log("[POST /] Actualizando deuda", { debtId, amount });
+      
+      // Actualizar remaining_amount de la deuda
+      const updateDebtStmt = c.env.DB.prepare(
+        `UPDATE debts 
+         SET remaining_amount = remaining_amount - ?,
+             status = CASE 
+               WHEN remaining_amount - ? <= 0 THEN 'paid'
+               WHEN remaining_amount - ? > 0 AND due_date < DATE('now') THEN 'overdue'
+               ELSE 'active'
+             END,
+             updated_at = CURRENT_TIMESTAMP
+         WHERE id = ? AND user_id = ?`
+      );
+      
+      await updateDebtStmt.bind(amount, amount, amount, debtId, userId).run();
+      console.log("[POST /] Deuda actualizada");
     }
 
     const getTransactionStmt = c.env.DB.prepare(
