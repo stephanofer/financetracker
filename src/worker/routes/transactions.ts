@@ -110,6 +110,9 @@ transactions.post("/", async (c) => {
     const goalId = body["goalId"]
       ? parseInt(body["goalId"] as string)
       : null;
+    const pendingPaymentId = body["pendingPaymentId"]
+      ? parseInt(body["pendingPaymentId"] as string)
+      : null;
     const description = body["description"] || null;
     const type = body["type"] as string;
     const notes = body["notes"] || null;
@@ -123,6 +126,7 @@ transactions.post("/", async (c) => {
       debtId,
       loanId,
       goalId,
+      pendingPaymentId,
       description,
       type,
       notes,
@@ -197,8 +201,8 @@ transactions.post("/", async (c) => {
 
     const stmt = c.env.DB.prepare(
       `INSERT INTO transactions 
-       (user_id, type, amount, category_id, subcategory_id, account_id, debt_id, loan_id, goal_id, description, notes, transaction_date) 
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+       (user_id, type, amount, category_id, subcategory_id, account_id, debt_id, loan_id, goal_id, pending_payment_id, description, notes, transaction_date) 
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
     );
     console.log("[POST /] Ejecutando INSERT de transacción");
 
@@ -213,6 +217,7 @@ transactions.post("/", async (c) => {
         debtId || null,
         loanId || null,
         goalId || null,
+        pendingPaymentId || null,
         description || null,
         notes || null,
         date
@@ -458,6 +463,60 @@ transactions.post("/", async (c) => {
             success: false,
             error: "Error al actualizar la meta de ahorro",
             message: goalError instanceof Error ? goalError.message : "Error desconocido",
+          },
+          500
+        );
+      }
+    }
+
+    // Si es un pago de pending_payment, actualizar el pago pendiente
+    if (type === "pending_payment" && pendingPaymentId) {
+      console.log("[POST /] Actualizando pago pendiente", { pendingPaymentId, amount });
+      
+      try {
+        // Verificar que el pago pendiente existe
+        const checkPendingPaymentStmt = c.env.DB.prepare(
+          `SELECT id, amount, status FROM pending_payments WHERE id = ? AND user_id = ?`
+        );
+        const existingPendingPayment = await checkPendingPaymentStmt.bind(pendingPaymentId, userId).first();
+        console.log("[POST /] Pago pendiente encontrado:", existingPendingPayment);
+        
+        if (!existingPendingPayment) {
+          console.error("[POST /] Error: Pago pendiente no encontrado", { pendingPaymentId, userId });
+          return c.json(
+            {
+              success: false,
+              error: "Pago pendiente no encontrado",
+            },
+            404
+          );
+        }
+        
+        // Actualizar el pago pendiente a estado 'paid'
+        const updatePendingPaymentStmt = c.env.DB.prepare(
+          `UPDATE pending_payments 
+           SET status = 'paid',
+               paid_date = CURRENT_TIMESTAMP,
+               transaction_id = ?,
+               updated_at = CURRENT_TIMESTAMP
+           WHERE id = ? AND user_id = ?`
+        );
+        
+        const updatePendingPaymentResult = await updatePendingPaymentStmt.bind(transactionId, pendingPaymentId, userId).run();
+        console.log("[POST /] Resultado actualización de pago pendiente:", updatePendingPaymentResult);
+        
+        if (updatePendingPaymentResult.meta.changes === 0) {
+          console.error("[POST /] Error: No se pudo actualizar el pago pendiente", { pendingPaymentId, userId });
+        } else {
+          console.log("[POST /] Pago pendiente actualizado exitosamente");
+        }
+      } catch (pendingPaymentError) {
+        console.error("[POST /] Error al actualizar pago pendiente:", pendingPaymentError);
+        return c.json(
+          {
+            success: false,
+            error: "Error al actualizar el pago pendiente",
+            message: pendingPaymentError instanceof Error ? pendingPaymentError.message : "Error desconocido",
           },
           500
         );

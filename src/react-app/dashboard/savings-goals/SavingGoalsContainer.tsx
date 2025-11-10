@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Link } from "react-router";
 import {
@@ -123,6 +122,12 @@ export function SavingGoalsContainer() {
                 <p className="text-white/60 text-sm">
                   Construye tu futuro, paso a paso 💰
                 </p>
+                <Link
+                  to="/dashboard/recurring-expenses"
+                  className="text-[#00D09E] text-sm hover:text-[#00F5B8] transition-colors underline"
+                >
+                  Ver pagos recurrentes
+                </Link>
               </div>
               <Popover>
                 <PopoverTrigger asChild>
@@ -225,9 +230,21 @@ export function SavingGoalsContainer() {
             {/* Filters */}
             <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
               {[
-                { id: "in_progress", label: "En Progreso", count: summary?.in_progress || 0 },
-                { id: "achieved", label: "Completadas", count: summary?.achieved || 0 },
-                { id: "expired", label: "Vencidas", count: summary?.expired || 0 },
+                {
+                  id: "in_progress",
+                  label: "En Progreso",
+                  count: summary?.in_progress || 0,
+                },
+                {
+                  id: "achieved",
+                  label: "Completadas",
+                  count: summary?.achieved || 0,
+                },
+                {
+                  id: "expired",
+                  label: "Vencidas",
+                  count: summary?.expired || 0,
+                },
                 { id: undefined, label: "Todas", count: summary?.total || 0 },
               ].map(({ id, label, count }) => (
                 <Button
@@ -279,10 +296,7 @@ export function SavingGoalsContainer() {
               const priorityConfig = PRIORITY_CONFIG[goal.priority];
 
               return (
-                <Link
-                  key={goal.id}
-                  to={`/dashboard/saving-goals/${goal.id}`}
-                >
+                <Link key={goal.id} to={`/dashboard/saving-goals/${goal.id}`}>
                   <Card className="bg-white/10 border-white/20 p-5 hover:bg-white/15 transition-all duration-300 hover:scale-[1.02] cursor-pointer">
                     <div className="flex items-start gap-4">
                       {/* Image or Icon */}
@@ -405,8 +419,8 @@ export function SavingGoalsContainer() {
                               <AlertCircle className="w-4 h-4 text-orange-400 flex-shrink-0" />
                               <p className="text-orange-400 text-xs">
                                 ¡Quedan {goal.days_remaining} día
-                                {goal.days_remaining !== 1 ? "s" : ""}! Te faltan{" "}
-                                {formatCurrency(goal.remaining_amount)}
+                                {goal.days_remaining !== 1 ? "s" : ""}! Te
+                                faltan {formatCurrency(goal.remaining_amount)}
                               </p>
                             </div>
                           )}

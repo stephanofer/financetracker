@@ -10,6 +10,7 @@ import debts from "./routes/debts";
 import recurringExpenses from "./routes/recurringExpenses";
 import savingGoals from "./routes/savingGoals";
 import loans from "./routes/loans";
+import pendingPayments from "./routes/pendingPayments";
 
 const app = new Hono<AppContext>().basePath("/api");
 
@@ -31,6 +32,7 @@ app.route("/debts", debts);
 app.route("/recurring-expenses", recurringExpenses);
 app.route("/saving-goals", savingGoals);
 app.route("/loans", loans);
+app.route("/pending-payments", pendingPayments);
 
 
 

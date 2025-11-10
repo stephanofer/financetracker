@@ -23,6 +23,8 @@ import RecurringExpensesContainer from "./dashboard/recurring-expenses/Recurring
 import { LoansDetailsContainer } from "./dashboard/loans/LoansDetailsContainer";
 import { LoansContainer } from "./dashboard/loans/LoansContainer";
 import { SavingGoalsDetails } from "./dashboard/savings-goals/SavingGoalsDetails";
+import { PendingPaymentsDetails } from "./dashboard/pending-payments/PendingPaymentsDetails";
+import { PendingPaymentsContainer } from "./dashboard/pending-payments/PendingPaymentsContainer";
 
 const router = createBrowserRouter([
   {
@@ -95,6 +97,14 @@ const router = createBrowserRouter([
       {
         path: "saving-goals/:id",
         Component: SavingGoalsDetails,
+      },
+      {
+        path: "pending-payments",
+        Component: PendingPaymentsContainer,
+      },
+      {
+        path: "pending-payments/:id",
+        Component: PendingPaymentsDetails,
       },
     ],
   },

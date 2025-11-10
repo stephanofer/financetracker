@@ -21,7 +21,8 @@ export type TransactionType =
   | "debt_payment"
   | "loan_payment"
   | "goal_contribution"
-  | "transfer";
+  | "transfer"
+  | "pending_payment";
 
 export type AccountType =
   | "cash"
@@ -275,4 +276,40 @@ export type LoanPaymentRow = {
   account_type: string | null;
   account_icon: string | null;
   account_color: string | null;
+};
+
+export type PendingPayment = {
+  id: number;
+  user_id: number;
+  name: string;
+  amount: number;
+  due_date: string | null;
+  category_id: number | null;
+  subcategory_id: number | null;
+  account_id: number | null;
+  priority: "high" | "medium" | "low";
+  status: "pending" | "paid" | "cancelled" | "overdue";
+  notes: string | null;
+  reminder_enabled: boolean;
+  debt_id: number | null;
+  loan_id: number | null;
+  transaction_id: number | null;
+  paid_date: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type PendingPaymentWithDetails = PendingPayment & {
+  category_name: string | null;
+  category_icon: string | null;
+  category_color: string | null;
+  subcategory_name: string | null;
+  account_name: string | null;
+  account_type: string | null;
+  account_icon: string | null;
+  account_color: string | null;
+  debt_name: string | null;
+  loan_debtor_name: string | null;
+  is_overdue?: boolean;
+  days_until_due?: number | null;
 };

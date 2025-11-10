@@ -19,7 +19,7 @@ import {
   PlusIcon,
   Receipt,
   TrendingUp,
-  Users
+  CalendarClock
 } from "lucide-react";
 import { useState } from "react";
 import { useNavigate } from "react-router";
@@ -133,9 +133,9 @@ export function BottomNav() {
 
           <button
             className="flex items-center justify-center w-14 h-14 text-white/60 hover:text-white hover:scale-105 transition-all duration-200"
-            onClick={() => navigate("/dashboard/loans")}
+            onClick={() => navigate("/dashboard/pending-payments")}
           >
-            <Users size={28} strokeWidth={2} />
+            <CalendarClock size={28} strokeWidth={2} />
           </button>
 
           <button

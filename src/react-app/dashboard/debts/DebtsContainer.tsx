@@ -19,6 +19,8 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
+import {Link} from 'react-router'
+
 
 export function DebtsContainer() {
   const { data, isPending, error } = useDebts();
@@ -131,6 +133,12 @@ export function DebtsContainer() {
               <p className="text-white/60 text-sm">
                 Mantén el control de tus finanzas
               </p>
+                <Link
+                to="/dashboard/loans"
+                className="text-[#00D09E] text-sm hover:text-[#00F5B8] transition-colors underline"
+                >
+                Ver mis Préstamos
+                </Link>
             </div>
             <Popover>
               <PopoverTrigger asChild>
