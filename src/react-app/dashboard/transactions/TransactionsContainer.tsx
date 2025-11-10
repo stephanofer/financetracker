@@ -2,7 +2,11 @@ import { ArrowLeft, Search, Filter } from "lucide-react";
 import { useNavigate } from "react-router";
 import { useTransactions } from "@/dashboard/hooks/useMainDetails";
 import { Spinner } from "@/components/ui/spinner";
-import { formatCurrency, formatDate } from "@/dashboard/utils/utils";
+import {
+  formatCurrency,
+  formatDate,
+  getTransactionDisplay,
+} from "@/dashboard/utils/utils";
 
 export function TransactionsContainer() {
   const navigate = useNavigate();
@@ -70,69 +74,77 @@ export function TransactionsContainer() {
           </div>
         ) : (
           <div className="flex flex-col gap-3 pb-6">
-            {transactions.map((expense, index) => (
-              <button
-                key={expense.id}
-                onClick={() => navigate(`${expense.id}/transactions`)}
-                className="flex items-center gap-4 bg-gradient-to-br from-slate-800/40 to-slate-900/40 hover:from-slate-800/60 hover:to-slate-900/60 backdrop-blur-sm rounded-2xl p-4 transition-all duration-300 border border-white/10 hover:border-white/20 active:scale-[0.98] w-full text-left shadow-lg hover:shadow-xl group"
-                style={{
-                  animation: "fadeInUp 0.4s ease-out forwards",
-                  animationDelay: `${index * 40}ms`,
-                  opacity: 0,
-                }}
-              >
-                <div
-                  className="rounded-xl p-3 flex-shrink-0 transition-transform group-hover:scale-110 shadow-lg"
+            {transactions.map((expense, index) => {
+              const transactionInfo = getTransactionDisplay(expense.type);
+              const useCategory =
+                expense.type === "income" || expense.type === "expense";
+
+              return (
+                <button
+                  key={expense.id}
+                  onClick={() => navigate(`${expense.id}/transactions`)}
+                  className="flex items-center gap-4 bg-gradient-to-br from-slate-800/40 to-slate-900/40 hover:from-slate-800/60 hover:to-slate-900/60 backdrop-blur-sm rounded-2xl p-4 transition-all duration-300 border border-white/10 hover:border-white/20 active:scale-[0.98] w-full text-left shadow-lg hover:shadow-xl group"
                   style={{
-                    backgroundColor: expense.category_color
-                      ? `${expense.category_color}30`
-                      : "rgba(59, 130, 246, 0.3)",
-                    border: `2px solid ${
-                      expense.category_color || "#3b82f6"
-                    }40`,
+                    animation: "fadeInUp 0.4s ease-out forwards",
+                    animationDelay: `${index * 40}ms`,
+                    opacity: 0,
                   }}
                 >
-                  <span className="text-2xl">
-                    {expense.category_icon || "💰"}
-                  </span>
-                </div>
-
-                <div className="flex-1 min-w-0">
-                  <p className="text-white font-semibold text-base truncate mb-1">
-                    {expense.category_name || "Expense"}
-                  </p>
-                  <div className="flex items-center gap-2">
-                    <p className="text-blue-400 text-xs font-medium whitespace-nowrap">
-                      {formatDate(expense.transaction_date)}
-                    </p>
-                    {expense.subcategory_name && (
-                      <>
-                        <span className="text-slate-600">•</span>
-                        <p className="text-slate-400 text-xs truncate">
-                          {expense.subcategory_name}
-                        </p>
-                      </>
-                    )}
-                  </div>
-                </div>
-
-                <div className="flex-shrink-0 text-right">
-                  <p
-                    className={`font-bold text-lg whitespace-nowrap ${
-                      expense.type === "income"
-                        ? "text-emerald-400"
-                        : "text-red-400"
-                    }`}
+                  <div
+                    className="rounded-xl p-3 flex-shrink-0 transition-transform group-hover:scale-110 shadow-lg"
+                    style={{
+                      backgroundColor:
+                        useCategory && expense.category_color
+                          ? `${expense.category_color}30`
+                          : `${transactionInfo.color}30`,
+                      border:
+                        useCategory && expense.category_color
+                          ? `2px solid ${expense.category_color}40`
+                          : `2px solid ${transactionInfo.color}40`,
+                    }}
                   >
-                    {expense.type === "income" ? "+" : "-"}
-                    {formatCurrency(expense.amount)}
-                  </p>
-                  <p className="text-slate-500 text-xs mt-0.5 capitalize">
-                    {expense.type}
-                  </p>
-                </div>
-              </button>
-            ))}
+                    <span className="text-2xl">
+                      {useCategory && expense.category_icon
+                        ? expense.category_icon
+                        : transactionInfo.icon}
+                    </span>
+                  </div>
+
+                  <div className="flex-1 min-w-0">
+                    <p className="text-white font-semibold text-base truncate mb-1">
+                      {useCategory && expense.category_name
+                        ? expense.category_name
+                        : transactionInfo.label}
+                    </p>
+                    <div className="flex items-center gap-2">
+                      <p className="text-blue-400 text-xs font-medium whitespace-nowrap">
+                        {formatDate(expense.transaction_date)}
+                      </p>
+                      {expense.subcategory_name && useCategory && (
+                        <>
+                          <span className="text-slate-600">•</span>
+                          <p className="text-slate-400 text-xs truncate">
+                            {expense.subcategory_name}
+                          </p>
+                        </>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="flex-shrink-0 text-right">
+                    <p
+                      className={`font-bold text-lg whitespace-nowrap ${transactionInfo.colorClass}`}
+                    >
+                      {transactionInfo.showSign && transactionInfo.sign}
+                      {formatCurrency(expense.amount)}
+                    </p>
+                    <p className="text-slate-500 text-xs mt-0.5 capitalize">
+                      {transactionInfo.label}
+                    </p>
+                  </div>
+                </button>
+              );
+            })}
           </div>
         )}
       </div>

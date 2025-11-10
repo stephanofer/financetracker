@@ -27,7 +27,12 @@ import { useNavigate, useParams } from "react-router";
 import { useTransaction } from "../hooks/useMainDetails";
 import { useDeleteTransaction } from "../hooks/useTransactions";
 import type { Attachment } from "../utils/types";
-import { formatCurrency, formatDate, formatFileSize } from "../utils/utils";
+import {
+  formatCurrency,
+  formatDate,
+  formatFileSize,
+  getTransactionDisplay,
+} from "../utils/utils";
 
 export function TransactionDetailContainer() {
   const { id } = useParams();
@@ -45,7 +50,11 @@ export function TransactionDetailContainer() {
     (att) => att.file_type === "image"
   );
 
-  const isTransfer = transaction?.type === "transfer";
+  const transactionInfo = transaction
+    ? getTransactionDisplay(transaction.type)
+    : null;
+  const useCategory =
+    transaction?.type === "income" || transaction?.type === "expense";
 
   if (isPending) {
     return (
@@ -78,9 +87,10 @@ export function TransactionDetailContainer() {
         <div
           className="absolute top-0 right-0 w-96 h-96 rounded-full blur-3xl opacity-20 animate-pulse"
           style={{
-            backgroundColor: isTransfer
-              ? "#3b82f6"
-              : transaction.category_color ?? "#64748b",
+            backgroundColor:
+              useCategory && transaction.category_color
+                ? transaction.category_color
+                : transactionInfo?.color ?? "#64748b",
           }}
         />
 
@@ -129,45 +139,48 @@ export function TransactionDetailContainer() {
             <div
               className="w-24 h-24 rounded-3xl flex items-center justify-center shadow-2xl relative overflow-hidden"
               style={{
-                backgroundColor: isTransfer
-                  ? "#3b82f630"
-                  : `${transaction.category_color ?? "#64748b"}30`,
-                border: isTransfer
-                  ? "2px solid #3b82f650"
-                  : `2px solid ${transaction.category_color ?? "#64748b"}50`,
+                backgroundColor:
+                  useCategory && transaction.category_color
+                    ? `${transaction.category_color}30`
+                    : `${transactionInfo?.color ?? "#64748b"}30`,
+                border:
+                  useCategory && transaction.category_color
+                    ? `2px solid ${transaction.category_color}50`
+                    : `2px solid ${transactionInfo?.color ?? "#64748b"}50`,
               }}
             >
               <div
                 className="absolute inset-0 opacity-20"
                 style={{
-                  backgroundColor: isTransfer
-                    ? "#3b82f6"
-                    : transaction.category_color ?? "#64748b",
+                  backgroundColor:
+                    useCategory && transaction.category_color
+                      ? transaction.category_color
+                      : transactionInfo?.color ?? "#64748b",
                 }}
               />
               <span className="text-5xl relative z-10">
-                {isTransfer ? "🔄" : transaction.category_icon}
+                {useCategory && transaction.category_icon
+                  ? transaction.category_icon
+                  : transactionInfo?.icon}
               </span>
             </div>
           </div>
 
           {/* Category Name */}
           <h1 className="text-3xl font-bold text-center mb-3 text-white">
-            {isTransfer ? "Transferencia" : transaction.category_name}
+            {useCategory && transaction.category_name
+              ? transaction.category_name
+              : transactionInfo?.label}
           </h1>
 
           {/* Amount - Enhanced with gradient */}
           <div className="text-center mb-2">
             <p
               className={`text-5xl font-bold ${
-                isTransfer
-                  ? "text-blue-400"
-                  : transaction.type === "expense"
-                  ? "text-red-400"
-                  : "text-emerald-400"
+                transactionInfo?.colorClass ?? "text-slate-400"
               }`}
             >
-              {isTransfer ? "" : transaction.type === "expense" ? "-" : "+"}
+              {transactionInfo?.showSign && transactionInfo.sign}
               {formatCurrency(transaction.amount)}
             </p>
           </div>
@@ -199,7 +212,9 @@ export function TransactionDetailContainer() {
               <div className="flex items-center gap-2 mb-3">
                 <Wallet className="w-4 h-4 text-slate-400" />
                 <p className="text-xs text-slate-400 font-semibold uppercase tracking-wider">
-                  {isTransfer ? "Cuenta Origen" : "Account"}
+                  {transaction.type === "transfer"
+                    ? "Cuenta Origen"
+                    : "Account"}
                 </p>
               </div>
               <div className="flex items-center justify-between">
@@ -214,24 +229,25 @@ export function TransactionDetailContainer() {
           )}
 
           {/* Destination Account - Only for transfers */}
-          {isTransfer && transaction.destination_account_id && (
-            <div className="bg-gradient-to-br from-blue-800/30 to-blue-900/30 backdrop-blur-sm rounded-2xl p-5 mb-4 border border-blue-500/20 shadow-lg">
-              <div className="flex items-center gap-2 mb-3">
-                <ArrowRightLeft className="w-4 h-4 text-blue-400" />
-                <p className="text-xs text-blue-400 font-semibold uppercase tracking-wider">
-                  Cuenta Destino
-                </p>
+          {transaction.type === "transfer" &&
+            transaction.destination_account_id && (
+              <div className="bg-gradient-to-br from-blue-800/30 to-blue-900/30 backdrop-blur-sm rounded-2xl p-5 mb-4 border border-blue-500/20 shadow-lg">
+                <div className="flex items-center gap-2 mb-3">
+                  <ArrowRightLeft className="w-4 h-4 text-blue-400" />
+                  <p className="text-xs text-blue-400 font-semibold uppercase tracking-wider">
+                    Cuenta Destino
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <p className="text-sm font-semibold text-white">
+                    {transaction.destination_account_name}
+                  </p>
+                </div>
               </div>
-              <div className="flex items-center gap-2">
-                <p className="text-sm font-semibold text-white">
-                  {transaction.destination_account_name}
-                </p>
-              </div>
-            </div>
-          )}
+            )}
 
-          {/* Category & Subcategory - Only for non-transfers */}
-          {!isTransfer && (
+          {/* Category & Subcategory - Only for income and expense */}
+          {useCategory && (
             <div className="bg-gradient-to-br from-slate-800/50 to-slate-900/50 backdrop-blur-sm rounded-2xl p-5 mb-4 border border-white/10 shadow-lg">
               <div className="flex items-center gap-2 mb-3">
                 <Tag className="w-4 h-4 text-slate-400" />

@@ -24,7 +24,11 @@ export type TransactionType =
   | "expense"
   | "debt"
   | "debt_payment"
-  | "transfer";
+  | "transfer"
+  | "goal_contribution"
+  | "loan_given"
+  | "loan_payment"
+  | "pending_payment";
 
 export type TransactionSimpleType = "expense" | "income" | null;
 

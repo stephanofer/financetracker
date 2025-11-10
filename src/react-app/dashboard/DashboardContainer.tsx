@@ -2,7 +2,11 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Greeting } from "@/dashboard/home/components/Greeting";
 import { useSummary } from "@/dashboard/hooks/useMainDetails";
 import { User } from "@/dashboard/utils/types";
-import { formatCurrency, formatDate } from "@/dashboard/utils/utils";
+import {
+  formatCurrency,
+  formatDate,
+  getTransactionDisplay,
+} from "@/dashboard/utils/utils";
 import { ArrowUpRight, Bell, Check, TrendingUp } from "lucide-react";
 import { useNavigate, useRouteLoaderData } from "react-router";
 import { MainDetails } from "@/dashboard/home/components/MainDetails";
@@ -146,7 +150,10 @@ export function DashboardContainer() {
             <>
               <div className="px-6 pt-3 flex flex-col gap-3">
                 {transactions?.map((expense, index) => {
-                  const isTransfer = expense.type === "transfer";
+                  const transactionInfo = getTransactionDisplay(expense.type);
+                  const useCategory =
+                    expense.type === "income" || expense.type === "expense";
+
                   return (
                     <button
                       key={expense.id}
@@ -160,37 +167,37 @@ export function DashboardContainer() {
                         opacity: 0,
                       }}
                     >
-                      {/* Category Icon */}
+                      {/* Category/Type Icon */}
                       <div
                         className="rounded-xl p-2 flex-shrink-0 shadow-lg transition-transform group-hover:scale-110"
                         style={{
-                          backgroundColor: isTransfer
-                            ? "rgba(59, 130, 246, 0.3)"
-                            : expense.category_color
+                          backgroundColor: useCategory && expense.category_color
                             ? `${expense.category_color}30`
-                            : "rgba(59, 130, 246, 0.3)",
-                          border: isTransfer
-                            ? "2px solid #3b82f640"
-                            : `2px solid ${expense.category_color || "#3b82f6"}40`,
+                            : `${transactionInfo.color}30`,
+                          border: useCategory && expense.category_color
+                            ? `2px solid ${expense.category_color}40`
+                            : `2px solid ${transactionInfo.color}40`,
                         }}
                       >
                         <span className="text-2xl">
-                          {isTransfer ? "🔄" : expense.category_icon || "💰"}
+                          {useCategory && expense.category_icon
+                            ? expense.category_icon
+                            : transactionInfo.icon}
                         </span>
                       </div>
 
                       {/* Transaction Info */}
                       <div className="flex-1 min-w-0">
                         <p className="text-white font-semibold text-base truncate mb-1">
-                          {isTransfer
-                            ? "Transferencia"
-                            : expense.category_name || "Expense"}
+                          {useCategory && expense.category_name
+                            ? expense.category_name
+                            : transactionInfo.label}
                         </p>
                         <div className="flex items-center gap-2">
                           <p className="text-blue-400 text-xs font-medium whitespace-nowrap">
                             {formatDate(expense.transaction_date)}
                           </p>
-                          {expense.subcategory_name && !isTransfer && (
+                          {expense.subcategory_name && useCategory && (
                             <>
                               <span className="text-slate-600">•</span>
                               <p className="text-slate-400 text-xs truncate">
@@ -198,7 +205,7 @@ export function DashboardContainer() {
                               </p>
                             </>
                           )}
-                          {isTransfer && (
+                          {expense.type === "transfer" && (
                             <>
                               <span className="text-slate-600">•</span>
                               <p className="text-slate-400 text-xs truncate">
@@ -212,19 +219,9 @@ export function DashboardContainer() {
                       {/* Amount */}
                       <div className="flex-shrink-0">
                         <p
-                          className={`font-bold text-lg whitespace-nowrap ${
-                            isTransfer
-                              ? "text-blue-400"
-                              : expense.type === "income"
-                              ? "text-emerald-400"
-                              : "text-red-400"
-                          }`}
+                          className={`font-bold text-lg whitespace-nowrap ${transactionInfo.colorClass}`}
                         >
-                          {isTransfer
-                            ? ""
-                            : expense.type === "income"
-                            ? "+"
-                            : "-"}
+                          {transactionInfo.showSign && transactionInfo.sign}
                           {formatCurrency(expense.amount)}
                         </p>
                       </div>
