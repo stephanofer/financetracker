@@ -104,6 +104,12 @@ transactions.post("/", async (c) => {
     const debtId = body["debtId"]
       ? parseInt(body["debtId"] as string)
       : null;
+    const loanId = body["loanId"]
+      ? parseInt(body["loanId"] as string)
+      : null;
+    const goalId = body["goalId"]
+      ? parseInt(body["goalId"] as string)
+      : null;
     const description = body["description"] || null;
     const type = body["type"] as string;
     const notes = body["notes"] || null;
@@ -115,6 +121,8 @@ transactions.post("/", async (c) => {
       subcategoryId,
       accountId,
       debtId,
+      loanId,
+      goalId,
       description,
       type,
       notes,
@@ -189,8 +197,8 @@ transactions.post("/", async (c) => {
 
     const stmt = c.env.DB.prepare(
       `INSERT INTO transactions 
-       (user_id, type, amount, category_id, subcategory_id, account_id, debt_id, description, notes, transaction_date) 
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+       (user_id, type, amount, category_id, subcategory_id, account_id, debt_id, loan_id, goal_id, description, notes, transaction_date) 
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
     );
     console.log("[POST /] Ejecutando INSERT de transacción");
 
@@ -203,6 +211,8 @@ transactions.post("/", async (c) => {
         subcategoryId || null,
         accountId,
         debtId || null,
+        loanId || null,
+        goalId || null,
         description || null,
         notes || null,
         date
@@ -219,28 +229,41 @@ transactions.post("/", async (c) => {
         : uploadedFile.type === "application/pdf"
         ? "pdf"
         : "other";
-      console.log("[POST /] Insertando attachment en DB");
+      console.log("[POST /] Insertando attachment en DB", {
+        transactionId,
+        fileName: r2Key.split("/").pop(),
+        originalName: uploadedFile.name,
+        fileSize: uploadedFile.size,
+        mimeType: uploadedFile.type,
+        fileType,
+      });
 
-      const attachmentStmt = c.env.DB.prepare(
-        `INSERT INTO attachments 
-         (transaction_id, file_name, original_file_name, file_size, mime_type, file_type, r2_key, r2_url, description) 
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
-      );
+      try {
+        const attachmentStmt = c.env.DB.prepare(
+          `INSERT INTO attachments 
+           (transaction_id, file_name, original_file_name, file_size, mime_type, file_type, r2_key, r2_url, description) 
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
+        );
 
-      await attachmentStmt
-        .bind(
-          transactionId,
-          r2Key.split("/").pop(),
-          uploadedFile.name,
-          uploadedFile.size,
-          uploadedFile.type,
-          fileType,
-          r2Key,
-          r2Url,
-          description || null
-        )
-        .run();
-      console.log("[POST /] Attachment insertado");
+        const attachmentResult = await attachmentStmt
+          .bind(
+            transactionId,
+            r2Key.split("/").pop(),
+            uploadedFile.name,
+            uploadedFile.size,
+            uploadedFile.type,
+            fileType,
+            r2Key,
+            r2Url,
+            description || null
+          )
+          .run();
+        console.log("[POST /] Attachment insertado exitosamente:", attachmentResult);
+      } catch (attachmentError) {
+        console.error("[POST /] Error al insertar attachment:", attachmentError);
+        // No retornamos error aquí para no fallar la transacción completa
+        console.log("[POST /] Continuando a pesar del error en attachment");
+      }
     }
 
     if (accountId) {
@@ -250,42 +273,220 @@ transactions.post("/", async (c) => {
         amount,
         type,
       });
-      await updateAccountBalance(c.env.DB, accountId, userId, amount, type);
-      console.log("[POST /] Balance actualizado");
+      try {
+        await updateAccountBalance(c.env.DB, accountId, userId, amount, type);
+        console.log("[POST /] Balance actualizado exitosamente");
+      } catch (balanceError) {
+        console.error("[POST /] Error al actualizar balance:", balanceError);
+        return c.json(
+          {
+            success: false,
+            error: "Error al actualizar el balance de la cuenta",
+            message: balanceError instanceof Error ? balanceError.message : "Error desconocido",
+          },
+          500
+        );
+      }
     }
 
     // Si es un pago de deuda, actualizar la deuda
     if (type === "debt_payment" && debtId) {
       console.log("[POST /] Actualizando deuda", { debtId, amount });
       
-      // Actualizar remaining_amount de la deuda
-      const updateDebtStmt = c.env.DB.prepare(
-        `UPDATE debts 
-         SET remaining_amount = remaining_amount - ?,
-             status = CASE 
-               WHEN remaining_amount - ? <= 0 THEN 'paid'
-               WHEN remaining_amount - ? > 0 AND due_date < DATE('now') THEN 'overdue'
-               ELSE 'active'
-             END,
-             updated_at = CURRENT_TIMESTAMP
-         WHERE id = ? AND user_id = ?`
-      );
-      
-      await updateDebtStmt.bind(amount, amount, amount, debtId, userId).run();
-      console.log("[POST /] Deuda actualizada");
+      try {
+        // Verificar que la deuda existe
+        const checkDebtStmt = c.env.DB.prepare(
+          `SELECT id, remaining_amount, original_amount FROM debts WHERE id = ? AND user_id = ?`
+        );
+        const existingDebt = await checkDebtStmt.bind(debtId, userId).first();
+        console.log("[POST /] Deuda encontrada:", existingDebt);
+        
+        if (!existingDebt) {
+          console.error("[POST /] Error: Deuda no encontrada", { debtId, userId });
+          return c.json(
+            {
+              success: false,
+              error: "Deuda no encontrada",
+            },
+            404
+          );
+        }
+        
+        // Actualizar remaining_amount de la deuda
+        const updateDebtStmt = c.env.DB.prepare(
+          `UPDATE debts 
+           SET remaining_amount = remaining_amount - ?,
+               status = CASE 
+                 WHEN remaining_amount - ? <= 0 THEN 'paid'
+                 WHEN remaining_amount - ? > 0 AND due_date < DATE('now') THEN 'overdue'
+                 ELSE 'active'
+               END,
+               updated_at = CURRENT_TIMESTAMP
+           WHERE id = ? AND user_id = ?`
+        );
+        
+        const updateDebtResult = await updateDebtStmt.bind(amount, amount, amount, debtId, userId).run();
+        console.log("[POST /] Resultado actualización de deuda:", updateDebtResult);
+        
+        if (updateDebtResult.meta.changes === 0) {
+          console.error("[POST /] Error: No se pudo actualizar la deuda", { debtId, userId });
+        } else {
+          console.log("[POST /] Deuda actualizada exitosamente");
+        }
+      } catch (debtError) {
+        console.error("[POST /] Error al actualizar deuda:", debtError);
+        return c.json(
+          {
+            success: false,
+            error: "Error al actualizar la deuda",
+            message: debtError instanceof Error ? debtError.message : "Error desconocido",
+          },
+          500
+        );
+      }
     }
 
+    // Si es un pago de préstamo recibido, actualizar el préstamo
+    if (type === "loan_payment" && loanId) {
+      console.log("[POST /] Actualizando préstamo", { loanId, amount });
+      
+      try {
+        // Verificar que el préstamo existe
+        const checkLoanStmt = c.env.DB.prepare(
+          `SELECT id, remaining_amount, original_amount FROM loans WHERE id = ? AND user_id = ?`
+        );
+        const existingLoan = await checkLoanStmt.bind(loanId, userId).first();
+        console.log("[POST /] Préstamo encontrado:", existingLoan);
+        
+        if (!existingLoan) {
+          console.error("[POST /] Error: Préstamo no encontrado", { loanId, userId });
+          return c.json(
+            {
+              success: false,
+              error: "Préstamo no encontrado",
+            },
+            404
+          );
+        }
+        
+        // Actualizar remaining_amount del préstamo
+        const updateLoanStmt = c.env.DB.prepare(
+          `UPDATE loans 
+           SET remaining_amount = remaining_amount - ?,
+               status = CASE 
+                 WHEN remaining_amount - ? <= 0 THEN 'paid'
+                 WHEN remaining_amount - ? > 0 AND due_date < DATE('now') THEN 'overdue'
+                 WHEN remaining_amount - ? > 0 AND remaining_amount - ? < original_amount THEN 'partial'
+                 ELSE 'active'
+               END,
+               updated_at = CURRENT_TIMESTAMP
+           WHERE id = ? AND user_id = ?`
+        );
+        
+        const updateLoanResult = await updateLoanStmt.bind(amount, amount, amount, amount, amount, loanId, userId).run();
+        console.log("[POST /] Resultado actualización de préstamo:", updateLoanResult);
+        
+        if (updateLoanResult.meta.changes === 0) {
+          console.error("[POST /] Error: No se pudo actualizar el préstamo", { loanId, userId });
+        } else {
+          console.log("[POST /] Préstamo actualizado exitosamente");
+        }
+      } catch (loanError) {
+        console.error("[POST /] Error al actualizar préstamo:", loanError);
+        return c.json(
+          {
+            success: false,
+            error: "Error al actualizar el préstamo",
+            message: loanError instanceof Error ? loanError.message : "Error desconocido",
+          },
+          500
+        );
+      }
+    }
+
+    // Si es una contribución a meta de ahorro, actualizar la meta
+    if (type === "goal_contribution" && goalId) {
+      console.log("[POST /] Actualizando meta de ahorro", { goalId, amount });
+      
+      try {
+        // Verificar que la meta existe
+        const checkGoalStmt = c.env.DB.prepare(
+          `SELECT id, current_amount, target_amount FROM savings_goals WHERE id = ? AND user_id = ?`
+        );
+        const existingGoal = await checkGoalStmt.bind(goalId, userId).first();
+        console.log("[POST /] Meta encontrada:", existingGoal);
+        
+        if (!existingGoal) {
+          console.error("[POST /] Error: Meta de ahorro no encontrada", { goalId, userId });
+          return c.json(
+            {
+              success: false,
+              error: "Meta de ahorro no encontrada",
+            },
+            404
+          );
+        }
+        
+        // Actualizar current_amount de la meta
+        const updateGoalStmt = c.env.DB.prepare(
+          `UPDATE savings_goals 
+           SET current_amount = current_amount + ?,
+               status = CASE 
+                 WHEN current_amount + ? >= target_amount THEN 'achieved'
+                 ELSE status
+               END,
+               completed_at = CASE 
+                 WHEN current_amount + ? >= target_amount AND completed_at IS NULL THEN CURRENT_TIMESTAMP
+                 ELSE completed_at
+               END,
+               updated_at = CURRENT_TIMESTAMP
+           WHERE id = ? AND user_id = ?`
+        );
+        
+        const updateGoalResult = await updateGoalStmt.bind(amount, amount, amount, goalId, userId).run();
+        console.log("[POST /] Resultado actualización de meta:", updateGoalResult);
+        
+        if (updateGoalResult.meta.changes === 0) {
+          console.error("[POST /] Error: No se pudo actualizar la meta", { goalId, userId });
+        } else {
+          console.log("[POST /] Meta de ahorro actualizada exitosamente");
+        }
+      } catch (goalError) {
+        console.error("[POST /] Error al actualizar meta de ahorro:", goalError);
+        return c.json(
+          {
+            success: false,
+            error: "Error al actualizar la meta de ahorro",
+            message: goalError instanceof Error ? goalError.message : "Error desconocido",
+          },
+          500
+        );
+      }
+    }
+
+    console.log("[POST /] Obteniendo transacción final con ID:", transactionId);
     const getTransactionStmt = c.env.DB.prepare(
       `SELECT * FROM transactions WHERE id = ?`
     );
     const transaction = await getTransactionStmt.bind(transactionId).first();
-    console.log("[POST /] Transacción final:", transaction);
+    console.log("[POST /] Transacción final obtenida:", transaction);
+
+    if (!transaction) {
+      console.error("[POST /] Error: No se pudo recuperar la transacción creada");
+      return c.json(
+        {
+          success: false,
+          error: "Transacción creada pero no se pudo recuperar",
+        },
+        500
+      );
+    }
 
     const response = {
       success: true,
       data: transaction,
     };
-    console.log("[POST /] Response:", response);
+    console.log("[POST /] Response final exitosa:", response);
     return c.json(response);
   } catch (error) {
     if (error instanceof Error && error.message.includes("boundary")) {

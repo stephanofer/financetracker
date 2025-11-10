@@ -17,6 +17,12 @@ import { AccountsContainer } from "@/dashboard/accounts/AccountsContainer";
 import { AccountsDetailContainer } from "@/dashboard/accounts/AccountsDetailContainer";
 import { TransferContainer } from "@/dashboard/transfer/TransferContainer";
 import { DebtsDetailContainer } from "./dashboard/debts/DebtsDetailContainer";
+import { SavingGoalsContainer } from "./dashboard/savings-goals/SavingGoalsContainer";
+import RecurringExpensesDetailContainer from "./dashboard/recurring-expenses/RecurringExpensesDetailContainer";
+import RecurringExpensesContainer from "./dashboard/recurring-expenses/RecurringExpensesContainer";
+import { LoansDetailsContainer } from "./dashboard/loans/LoansDetailsContainer";
+import { LoansContainer } from "./dashboard/loans/LoansContainer";
+import { SavingGoalsDetails } from "./dashboard/savings-goals/SavingGoalsDetails";
 
 const router = createBrowserRouter([
   {
@@ -65,6 +71,30 @@ const router = createBrowserRouter([
       {
         path: "debts/:id",
         Component: DebtsDetailContainer,
+      },
+      {
+        path: "recurring-expenses",
+        Component: RecurringExpensesContainer,
+      },
+      {
+        path: "recurring-expenses/:id",
+        Component: RecurringExpensesDetailContainer,
+      },
+      {
+        path: "loans",
+        Component: LoansContainer,
+      },
+      {
+        path: "loans/:id",
+        Component: LoansDetailsContainer,
+      },
+      {
+        path: "saving-goals",
+        Component: SavingGoalsContainer,
+      },
+      {
+        path: "saving-goals/:id",
+        Component: SavingGoalsDetails,
       },
     ],
   },

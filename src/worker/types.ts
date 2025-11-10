@@ -19,6 +19,8 @@ export type TransactionType =
   | "expense"
   | "debt"
   | "debt_payment"
+  | "loan_payment"
+  | "goal_contribution"
   | "transfer";
 
 export type AccountType =
@@ -152,4 +154,125 @@ export type DebtInstallmentRow = {
   created_at: string;
   transaction_id: number | null;
   transaction_date: string | null;
+};
+
+export type RecurringExpense = {
+  id: number;
+  user_id: number;
+  name: string;
+  amount: number;
+  frequency: "weekly" | "biweekly" | "monthly" | "annual";
+  charge_day: number;
+  category_id: number | null;
+  subcategory_id: number | null;
+  account_id: number;
+  status: "active" | "paused" | "cancelled";
+  next_charge_date: string | null;
+  last_charge_date: string | null;
+  notify_3_days: boolean;
+  notify_1_day: boolean;
+  notify_same_day: boolean;
+  created_at: string;
+  updated_at: string;
+};
+
+export type RecurringExpenseWithDetails = RecurringExpense & {
+  category_name: string | null;
+  category_color: string | null;
+  category_icon: string | null;
+  subcategory_name: string | null;
+  account_name: string;
+  account_type: string;
+  account_icon: string | null;
+  account_color: string | null;
+};
+
+export type RecurringExpenseHistory = {
+  id: number;
+  amount: number;
+  transaction_date: string;
+  description: string | null;
+  notes: string | null;
+  created_at: string;
+};
+
+export type SavingGoal = {
+  id: number;
+  user_id: number;
+  name: string;
+  description: string | null;
+  target_amount: number;
+  current_amount: number;
+  target_date: string | null;
+  priority: "high" | "medium" | "low";
+  status: "in_progress" | "achieved" | "expired" | "cancelled";
+  image_url: string | null;
+  auto_contribute: boolean;
+  auto_contribute_percentage: number | null;
+  created_at: string;
+  updated_at: string;
+  completed_at: string | null;
+};
+
+export type SavingGoalWithStats = SavingGoal & {
+  progress_percentage: number;
+  remaining_amount: number;
+  total_contributions: number;
+  contributions_count: number;
+  last_contribution_date: string | null;
+  days_remaining: number | null;
+  is_overdue: boolean;
+};
+
+export type GoalContribution = {
+  id: number;
+  amount: number;
+  transaction_date: string;
+  description: string | null;
+  notes: string | null;
+  created_at: string;
+  account_name: string | null;
+  account_type: string | null;
+  account_icon: string | null;
+  account_color: string | null;
+};
+
+export type Loan = {
+  id: number;
+  user_id: number;
+  debtor_name: string;
+  debtor_contact: string | null;
+  original_amount: number;
+  remaining_amount: number;
+  interest_rate: number;
+  loan_date: string;
+  due_date: string | null;
+  status: "active" | "paid" | "overdue" | "partial";
+  notes: string | null;
+  account_id: number | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type LoanRowWithAggregates = Loan & {
+  total_received: number | null;
+  payments_count: number | null;
+  last_payment_date: string | null;
+  account_name: string | null;
+  account_type: string | null;
+  account_icon: string | null;
+  account_color: string | null;
+};
+
+export type LoanPaymentRow = {
+  id: number;
+  amount: number;
+  transaction_date: string;
+  description: string | null;
+  notes: string | null;
+  created_at: string;
+  account_name: string | null;
+  account_type: string | null;
+  account_icon: string | null;
+  account_color: string | null;
 };

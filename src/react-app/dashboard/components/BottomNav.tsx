@@ -13,13 +13,13 @@ import {
 import { TransactionForm } from "@/dashboard/forms/TransactionForm";
 import { TransactionSimpleType } from "@/dashboard/utils/types";
 import {
+  ArrowLeftRight,
   Home,
-  Receipt,
   Plus,
   PlusIcon,
-  Search,
-  User,
-  ArrowLeftRight,
+  Receipt,
+  TrendingUp,
+  Users
 } from "lucide-react";
 import { useState } from "react";
 import { useNavigate } from "react-router";
@@ -131,8 +131,11 @@ export function BottomNav() {
             <Home size={28} strokeWidth={2} />
           </button>
 
-          <button className="flex items-center justify-center w-14 h-14 text-white/60 hover:text-white hover:scale-105 transition-all duration-200">
-            <Search size={28} strokeWidth={2} />
+          <button
+            className="flex items-center justify-center w-14 h-14 text-white/60 hover:text-white hover:scale-105 transition-all duration-200"
+            onClick={() => navigate("/dashboard/loans")}
+          >
+            <Users size={28} strokeWidth={2} />
           </button>
 
           <button
@@ -155,8 +158,11 @@ export function BottomNav() {
             <Receipt size={28} strokeWidth={2} />
           </button>
 
-          <button className="flex items-center justify-center w-14 h-14 text-white/60 hover:text-white hover:scale-105 transition-all duration-200">
-            <User size={28} strokeWidth={2} />
+          <button
+            className="flex items-center justify-center w-14 h-14 text-white/60 hover:text-white hover:scale-105 transition-all duration-200"
+            onClick={() => navigate("/dashboard/saving-goals")}
+          >
+            <TrendingUp   size={28} strokeWidth={2} />
           </button>
         </div>
       </nav>

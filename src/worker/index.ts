@@ -7,6 +7,9 @@ import categories from "./routes/categories";
 import subcategories from "./routes/subcategories";
 import accounts from "./routes/accounts";
 import debts from "./routes/debts";
+import recurringExpenses from "./routes/recurringExpenses";
+import savingGoals from "./routes/savingGoals";
+import loans from "./routes/loans";
 
 const app = new Hono<AppContext>().basePath("/api");
 
@@ -25,5 +28,10 @@ app.route("/categories", categories);
 app.route("/subcategories", subcategories);
 app.route("/accounts", accounts);
 app.route("/debts", debts);
+app.route("/recurring-expenses", recurringExpenses);
+app.route("/saving-goals", savingGoals);
+app.route("/loans", loans);
+
+
 
 export default app;
