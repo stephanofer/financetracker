@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import {
   Form,
   FormControl,
+  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -26,6 +27,7 @@ import {
   PendingPaymentFormData,
   defaultPendingPaymentValues,
 } from "../schemas/PendingPaymentSchema";
+import { FileUpload } from "@/dashboard/components/FileUpload";
 
 interface CreatePendingPaymentFormProps {
   handleClose: () => void;
@@ -155,7 +157,10 @@ export function CreatePendingPaymentForm({
                 </FormControl>
                 <SelectContent>
                   {categories?.map((category) => (
-                    <SelectItem key={category.id} value={category.id.toString()}>
+                    <SelectItem
+                      key={category.id}
+                      value={category.id.toString()}
+                    >
                       <span className="flex items-center gap-2">
                         <span>{category.icon}</span>
                         <span>{category.name}</span>
@@ -216,10 +221,7 @@ export function CreatePendingPaymentForm({
           render={({ field }) => (
             <FormItem>
               <FormLabel>Cuenta Sugerida (Opcional)</FormLabel>
-              <Select
-                onValueChange={field.onChange}
-                value={field.value}
-              >
+              <Select onValueChange={field.onChange} value={field.value}>
                 <FormControl>
                   <SelectTrigger>
                     <SelectValue placeholder="Selecciona una cuenta" />
@@ -260,6 +262,28 @@ export function CreatePendingPaymentForm({
           )}
         />
 
+        <FormField
+          control={form.control}
+          name="file"
+          render={({ field: { value, onChange, ...fieldProps } }) => (
+            <FormItem>
+              <FormLabel>Comprobante (Opcional)</FormLabel>
+              <FormControl>
+                <FileUpload
+                  value={value ?? null}
+                  onChange={onChange}
+                  {...fieldProps}
+                />
+              </FormControl>
+              <FormDescription className="text-xs text-slate-400 flex items-center gap-1.5">
+                <span className="inline-block w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse"></span>
+                Formatos: JPG, PNG, WEBP, PDF (Máx. 5MB)
+              </FormDescription>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
         {/* Botones */}
         <div className="flex gap-2 pt-4">
           <Button
@@ -271,11 +295,7 @@ export function CreatePendingPaymentForm({
           >
             Cancelar
           </Button>
-          <Button
-            type="submit"
-            className="flex-1"
-            disabled={isPending}
-          >
+          <Button type="submit" className="flex-1" disabled={isPending}>
             {isPending ? (
               <>
                 <Spinner className="size-4" />
